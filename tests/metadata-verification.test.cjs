@@ -12,13 +12,13 @@ const fields = {
     'Information Source': 'Vendor documentation', 'Last Reviewed': '2026-09-30T00:00:00Z', 'Next Review': '2027-09-30T00:00:00Z',
     OwnerLookupId: '6', ResponsibleLookupId: '7', SecondaryLookupId: '8', ContentTypeId: '0x010100ABC123',
 };
-async function verify(overrides = {}) {
+async function verify(overrides = {}, contentType) {
     let hydrated = false;
     const input = {title: 'Test', classification: 'Internal', lifecycle: 'Draft', 'information-source': 'Vendor documentation', 'last-reviewed': '2026-09-30', 'next-review': '2027-09-30'};
     const context = {
         currentDriveItem: {id: 'file', name: 'Copy.docx'}, currentListItem: {}, currentDocumentFields: {},
         getDriveItemById: async () => ({id: 'file', name: 'Copy.docx'}),
-        getCurrentListItem: async () => ({fields: {...fields, ...overrides}}),
+        getCurrentListItem: async () => ({fields: {...fields, ...overrides}, contentType}),
         document: {getElementById: id => ({value: input[id]})},
         requireColumn: name => ({name}), normalizeName: value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, ''),
         getSelectedTerm: id => ({label: {domain: 'NETWORK', function: 'Firewall', 'document-type': 'Guide'}[id]}),
@@ -53,4 +53,11 @@ test('Clearing selections requires SharePoint to remove every previous value', (
     const empty = [];
     context.check(empty, 'Tags', [], []);
     assert.deepEqual(empty, []);
+});
+
+test('Content type verifies from the documented Graph listItem property when fields omit the ID', async () => {
+    assert.equal(await verify({ContentTypeId: undefined}, {id: '0x010100ABC123', name: 'DORK Guide'}), true);
+});
+test('An incorrect listItem content type fails even when the field bag contains the expected ID', async () => {
+    await assert.rejects(() => verify({}, {id: '0x010100DEF', name: 'DORK Standard'}), error => error.message.includes('Content Type') && error.message.includes('DORK Standard'));
 });

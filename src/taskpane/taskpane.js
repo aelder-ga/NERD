@@ -1877,14 +1877,14 @@ async function verifySavedMetadata(contentType, desiredFilename) {
 
     if (contentType) {
         const actualContentTypeId =
-            String(currentDocumentFields?.ContentTypeId || "");
+            String(currentListItem?.contentType?.id || currentDocumentFields?.ContentTypeId || "");
 
         if (
             !actualContentTypeId.toLowerCase().startsWith(
                 String(contentType.id).toLowerCase()
             )
         ) {
-            failures.push("Content Type");
+            failures.push(`Content Type (expected ${contentType.name || contentType.id}; returned ${currentListItem?.contentType?.name || actualContentTypeId || "no content type ID"})`);
         }
     }
 
