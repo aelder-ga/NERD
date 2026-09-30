@@ -84,7 +84,12 @@ let connecting = false;
 async function connectToDork() {
     if (connecting) return;
     connecting = true;
-    document.getElementById("connect-nerd").disabled = true;
+    const connectButton = document.getElementById("connect-nerd");
+    connectButton.disabled = true;
+    connectButton.hidden = true;
+    document.getElementById("metadata-form").hidden = true;
+    document.getElementById("save-metadata").disabled = true;
+    setSaveStatus("", "");
 
     try {
         setConnectionStatus("Connecting to DORK...");
@@ -100,7 +105,8 @@ async function connectToDork() {
             `${GRAPH_ROOT}/sites/${DORK_HOST}:${DORK_SITE_PATH}`
         );
 
-        setConnectedStatus();
+        await acquireToken(SHAREPOINT_SCOPES);
+        setConnectionStatus("Loading DORK metadata...");
 
         await Promise.all([
             initializeTaxonomy(),
@@ -111,15 +117,9 @@ async function connectToDork() {
     } catch (error) {
         console.error("NERD initialization failed:", error);
 
-        // Keep the authenticated connection status when discovery fails.
-        if (currentUser && dorkSite) {
-            setConnectedStatus();
-        } else {
-            setConnectionStatus(
-                `Connection failed: ${getErrorMessage(error)}`,
-                true
-            );
-        }
+        setConnectionStatus(`Connection failed: ${getErrorMessage(error)}`, true);
+        connectButton.textContent = "Retry connection";
+        connectButton.hidden = false;
 
         setSaveStatus(getErrorMessage(error), "error");
     } finally {
@@ -156,6 +156,7 @@ async function acquireToken(scopes) {
 
     try {
         const result = await msalInstance.acquireTokenSilent(request);
+        rememberSilentToken(resource, result);
         return result.accessToken;
     } catch (silentError) {
         // Word on the web needs the host identity to reuse the Entra session.
@@ -163,6 +164,7 @@ async function acquireToken(scopes) {
         if (isWeb && loginHint && typeof msalInstance.ssoSilent === "function") {
             try {
                 const result = await msalInstance.ssoSilent(request);
+                rememberSilentToken(resource, result);
                 return result.accessToken;
             } catch (ssoError) {
                 console.warn("Word silent sign-in unavailable:", ssoError.errorCode || ssoError.code || "unknown");
@@ -170,6 +172,14 @@ async function acquireToken(scopes) {
         }
         console.warn("Silent token acquisition unavailable:", silentError.errorCode || silentError.code || "unknown");
         return acquireDialogToken(scopes);
+    }
+}
+
+function rememberSilentToken(resource, result) {
+    const expires = result.expiresOn?.getTime();
+    if (result.accessToken && Number.isFinite(expires) && expires > Date.now() + 120000) {
+        // Reuse the resource token until it approaches expiry; never store refresh tokens.
+        dialogTokens.set(resource, {token: result.accessToken, expires});
     }
 }
 
@@ -200,11 +210,11 @@ function acquireDialogToken(scopes) {
         if (currentUser?.userPrincipalName) url.searchParams.set("login_hint", currentUser.userPrincipalName);
         Office.context.ui.displayDialogAsync(url.href, {height:60, width:35, displayInIframe:false}, result => {
             if (result.status !== Office.AsyncResultStatus.Succeeded) {
-                reject(new Error(result.error.message + " Use Connect to DORK to retry.")); return;
+                reject(new Error(result.error.message + " Use Retry connection to try again.")); return;
             }
             const dialog = result.value;
             let settled = false;
-            const timer = setTimeout(() => { settled = true; dialog.close(); reject(new Error("Sign-in timed out. Use Connect to DORK to retry.")); }, 300000);
+            const timer = setTimeout(() => { settled = true; dialog.close(); reject(new Error("Sign-in timed out. Use Retry connection to try again.")); }, 300000);
             dialog.addEventHandler(Office.EventType.DialogMessageReceived, event => {
                 if (settled) return;
                 if (event.origin && event.origin !== window.location.origin) return;
@@ -226,7 +236,7 @@ function acquireDialogToken(scopes) {
             dialog.addEventHandler(Office.EventType.DialogEventReceived, () => {
                 if (settled) return;
                 settled = true;
-                clearTimeout(timer); reject(new Error("Sign-in window closed. Use Connect to DORK to retry."));
+                clearTimeout(timer); reject(new Error("Sign-in window closed. Use Retry connection to try again."));
             });
         });
     }).finally(() => { activeAuthDialog = null; });
@@ -682,6 +692,7 @@ async function initializeCurrentDocument() {
 
     await hydrateAllControls();
     await configureAutoOpen();
+    document.getElementById("metadata-form").hidden = false;
     enableSave();
     setConnectedStatus();
 }

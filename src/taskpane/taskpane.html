@@ -45,13 +45,14 @@
             Connecting to DORK...
         </div>
 
-        <button id="connect-nerd" type="button">Connect to DORK</button>
+        <button id="connect-nerd" type="button" hidden>Connect to DORK</button>
 
         <div id="nerd-auto-open-control" hidden style="margin: 12px 0; font-size: 12px;">
             <label><input id="nerd-auto-open" type="checkbox" disabled /> Open NERD automatically with this document</label>
             <div id="nerd-auto-open-status" role="status"></div>
         </div>
 
+        <div id="metadata-form" hidden>
         <!-- TITLE -->
 
         <div class="nerd-field">
@@ -580,14 +581,15 @@
                 <span>Save Metadata</span>
             </button>
 
+        </div>
+        </div>
+
             <div
                 id="save-status"
                 class="nerd-save-status"
                 role="status"
                 aria-live="polite"
             ></div>
-
-        </div>
 
     </main>
 

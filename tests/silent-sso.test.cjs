@@ -43,3 +43,18 @@ test('Desktop and unavailable Office identity retain the existing fallback', asy
         assert.deepEqual(calls.map(x=>x.kind),['cache','dialog']);
     }
 });
+
+test('Silent resource tokens are reused through Save and reacquired near expiry', async () => {
+    const {context,calls} = setup({cached:true});
+    context.msalInstance.acquireTokenSilent = async request => {
+        calls.push({kind:'cache',request});
+        return {accessToken:'resource-token',expiresOn:new Date(Date.now()+3600000)};
+    };
+    const scopes = ['https://rocktwpnet.sharepoint.com/AllSites.Write'];
+    assert.equal(await context.acquire(scopes),'resource-token');
+    assert.equal(await context.acquire(scopes),'resource-token');
+    assert.equal(calls.length,1);
+    context.dialogTokens.get('sharepoint').expires = Date.now()+60000;
+    assert.equal(await context.acquire(scopes),'resource-token');
+    assert.equal(calls.length,2);
+});
