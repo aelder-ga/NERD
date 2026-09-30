@@ -1,5 +1,6 @@
 import { createNestablePublicClientApplication } from "@azure/msal-browser";
 import { configureAutoOpen } from "./auto-open";
+import { syncDocumentMetadata } from "./document-metadata";
 
 /* global document, Office */
 
@@ -691,6 +692,7 @@ async function initializeCurrentDocument() {
     currentDocumentFields = currentListItem.fields || {};
 
     await hydrateAllControls();
+    await refreshDocumentMetadata();
     await configureAutoOpen();
     document.getElementById("metadata-form").hidden = false;
     enableSave();
@@ -783,12 +785,12 @@ async function getCurrentListItem(driveItem) {
 /* HYDRATION */
 
 async function hydrateAllControls() {
-    setTextValue("title", getFieldValue("Title"));
+    setTextValue("title", getFieldValue("Title") || String(currentDriveItem?.name || "").replace(/\.[^.]+$/, ""));
     setChoiceValue(
         "classification",
         getFieldValue("Classification")
     );
-    setChoiceValue("lifecycle", getFieldValue("Lifecycle"));
+    setChoiceValue("lifecycle", getFieldValue("Lifecycle") || "Draft");
     setTextValue(
         "information-source",
         getFieldValue("Information Source")
@@ -808,6 +810,38 @@ async function hydrateAllControls() {
         hydratePerson("responsible", "Responsible"),
         hydratePerson("secondary", "Secondary"),
     ]);
+}
+
+async function refreshDocumentMetadata() {
+    const value = id => document.getElementById(id)?.value || "";
+    const choice = id => value(id) ? document.getElementById(id)?.selectedOptions?.[0]?.textContent?.trim() || value(id) : "";
+    const labels = id => pickerSelections[id].map(item => item.label).join("; ");
+    const person = id => personSelections[id]?.displayName || "";
+    const type = choice("document-type");
+    const values = {
+        DORK_DocumentId: "", DORK_Title: value("title") || "[Document Title]", DORK_Domain: choice("domain"),
+        DORK_Function: choice("function"), DORK_DocumentType: type,
+        DORK_TypeHeading: `DORK ${type.toUpperCase()}`,
+        DORK_System: labels("system-platform"), DORK_Collection: labels("collection"),
+        DORK_Tags: labels("tags"), DORK_Classification: value("classification"),
+        DORK_Audience: labels("audience"), DORK_Lifecycle: value("lifecycle"),
+        DORK_Owner: person("owner"), DORK_Responsible: person("responsible"),
+        DORK_Secondary: person("secondary"), DORK_InformationSource: value("information-source"),
+        DORK_LastReviewed: value("last-reviewed"), DORK_NextReview: value("next-review"),
+    };
+    // Read an assigned identifier if the library already provides one. Never invent
+    // a permanent cross-library ID from a library-local item number.
+    const idColumn = Object.values(dorkColumns).find(column =>
+        ["documentid", "dorkid"].includes(normalizeName(column.displayName).replace(/[^a-z0-9]/g, "")));
+    const documentId = idColumn && currentDocumentFields?.[idColumn.name];
+    if (documentId) values.DORK_DocumentId = `${documentId} `;
+    try {
+        await syncDocumentMetadata(values);
+        return true;
+    } catch (error) {
+        console.warn("NERD document field refresh failed:", getErrorMessage(error));
+        return false;
+    }
 }
 
 function getFieldValue(displayName) {
@@ -869,7 +903,8 @@ async function hydrateTaxonomy() {
 
     setTermSelectByLabel(
         "document-type",
-        taxonomyLabelsFromField(getFieldValue("Document Type"))[0] || ""
+        taxonomyLabelsFromField(getFieldValue("Document Type"))[0] ||
+            String(currentListItem?.contentType?.name || "").replace(/^DORK\s+/i, "")
     );
 
     setPickerSelectionsByLabels(
@@ -1578,7 +1613,11 @@ async function saveMetadata() {
         setSaveStatus("Verifying SharePoint...", "working");
         await verifySavedMetadata(contentType, desiredFilename);
 
-        setSaveStatus("Metadata saved and verified.", "success");
+        const pageUpdated = await refreshDocumentMetadata();
+        setSaveStatus(pageUpdated
+            ? "Metadata saved and verified. Document fields updated."
+            : "Metadata saved and verified. Document fields could not refresh; reopen NERD to retry.",
+            pageUpdated ? "success" : "error");
     } catch (error) {
         console.error("NERD save failed:", error);
         setSaveStatus(
