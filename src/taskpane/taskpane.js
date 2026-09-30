@@ -6,6 +6,7 @@ import { configureAutoOpen } from "./auto-open";
 const msalConfig = {
     auth: {
         clientId: "f8371eb2-8758-48cf-8fa5-2f9b696d89c4",
+        redirectUri: window.location.origin + "/sso-redirect.html",
         authority: "https://login.microsoftonline.com/1169a3a9-3860-4a0b-80aa-410be007cde5",
     },
 };
@@ -135,21 +136,39 @@ Office.onReady(() => {
 
 /* AUTHENTICATION */
 
+async function getOfficeLoginHint() {
+    try {
+        const context = await Office.auth?.getAuthContext?.();
+        if (context?.userPrincipalName) return context.userPrincipalName;
+    } catch (_) { /* Older hosts can lack the Office authentication context. */ }
+    return currentUser?.userPrincipalName || null;
+}
+
 async function acquireToken(scopes) {
     const resource = scopes[0].startsWith("https://rocktwpnet") ? "sharepoint" : "graph";
     const cached = dialogTokens.get(resource);
     if (cached && cached.expires > Date.now() + 120000) return cached.token;
-    const request = { scopes };
+    const loginHint = await getOfficeLoginHint();
+    const account = loginHint
+        ? msalInstance.getAccountByUsername?.(loginHint)
+        : msalInstance.getActiveAccount?.();
+    const request = { scopes, ...(loginHint ? {loginHint} : {}), ...(account ? {account} : {}) };
 
     try {
         const result = await msalInstance.acquireTokenSilent(request);
         return result.accessToken;
     } catch (silentError) {
-        console.warn(
-            "Silent token acquisition failed. Trying interactive authentication.",
-            silentError
-        );
-
+        // Word on the web needs the host identity to reuse the Entra session.
+        const isWeb = Office.context.platform === (Office.PlatformType?.OfficeOnline || "OfficeOnline");
+        if (isWeb && loginHint && typeof msalInstance.ssoSilent === "function") {
+            try {
+                const result = await msalInstance.ssoSilent(request);
+                return result.accessToken;
+            } catch (ssoError) {
+                console.warn("Word silent sign-in unavailable:", ssoError.errorCode || ssoError.code || "unknown");
+            }
+        }
+        console.warn("Silent token acquisition unavailable:", silentError.errorCode || silentError.code || "unknown");
         return acquireDialogToken(scopes);
     }
 }

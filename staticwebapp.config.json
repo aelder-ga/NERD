@@ -1,11 +1,28 @@
 {
-  "platform": { "apiRuntime": "node:22" },
+  "platform": {
+    "apiRuntime": "node:22"
+  },
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "no-referrer"
   },
   "routes": [
-    { "route": "/", "redirect": "/taskpane.html", "statusCode": 302 },
-    { "route": "/api/*", "headers": { "Cache-Control": "no-store" } }
+    {
+      "route": "/",
+      "redirect": "/taskpane.html",
+      "statusCode": 302
+    },
+    {
+      "route": "/sso-redirect.html",
+      "headers": {
+        "Cache-Control": "no-store"
+      }
+    },
+    {
+      "route": "/api/*",
+      "headers": {
+        "Cache-Control": "no-store"
+      }
+    }
   ]
 }
