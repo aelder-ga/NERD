@@ -1606,7 +1606,7 @@ async function resolvePeople() {
         const person = personSelections[id];
         if (!person) continue;
 
-        if (person.loginName || person.sharePointLookupId) continue;
+        if (person.sharePointLookupId) continue;
 
         const resolved = await ensureSharePointUser(person);
         person.sharePointLookupId = resolved.id;
@@ -1830,34 +1830,33 @@ async function verifySavedMetadata(contentType, desiredFilename) {
         failures.push("Title");
     }
 
-    verifyTaxonomyField(
-        failures,
-        "Domain",
-        getSelectedTerm("domain")?.label
-    );
-    verifyTaxonomyField(
-        failures,
-        "Function",
-        getSelectedTerm("function")?.label
-    );
-    verifyTaxonomyField(
-        failures,
-        "Document Type",
-        getSelectedTerm("document-type")?.label
-    );
-
-    if (
-        normalizeName(getFieldValue("Classification")) !==
-        normalizeName(document.getElementById("classification").value)
-    ) {
-        failures.push("Classification");
+    for (const [displayName, pickerId] of [
+        ["Domain", "domain"], ["Function", "function"], ["Document Type", "document-type"],
+    ]) {
+        const term = getSelectedTerm(pickerId);
+        verifyLabelSet(failures, displayName, taxonomyLabelsFromField(getFieldValue(displayName)), term ? [term.label] : []);
     }
-
-    if (
-        normalizeName(getFieldValue("Lifecycle")) !==
-        normalizeName(document.getElementById("lifecycle").value)
-    ) {
-        failures.push("Lifecycle");
+    for (const [displayName, pickerId] of [
+        ["System / Platform", "system-platform"], ["Collection", "collection"], ["Tags", "tags"],
+    ]) {
+        verifyLabelSet(failures, displayName, taxonomyLabelsFromField(getFieldValue(displayName)), pickerSelections[pickerId].map(item => item.label));
+    }
+    verifyLabelSet(failures, "Audience", choiceLabelsFromField(getFieldValue("Audience")), pickerSelections.audience.map(item => item.label));
+    for (const [displayName, id] of [["Classification", "classification"], ["Lifecycle", "lifecycle"]]) {
+        if (String(getFieldValue(displayName) || "") !== document.getElementById(id).value) failures.push(displayName);
+    }
+    for (const [displayName, id] of [["Information Source", "information-source"], ["Last Reviewed", "last-reviewed"], ["Next Review", "next-review"]]) {
+        const actual = String(getFieldValue(displayName) || "");
+        const expected = document.getElementById(id).value.trim();
+        if ((id === "information-source" ? actual : actual.substring(0, 10)) !== expected) failures.push(displayName);
+    }
+    for (const [displayName, id] of [["Owner", "owner"], ["Responsible", "responsible"], ["Secondary", "secondary"]]) {
+        const column = requireColumn(displayName);
+        const raw = currentDocumentFields?.[`${column.name}LookupId`];
+        const actualIds = (Array.isArray(raw) ? raw : raw == null || raw === "" ? [] : [raw]).map(String);
+        const person = personSelections[id];
+        const expectedIds = person ? [String(person.sharePointLookupId)] : [];
+        if (!sameValueSet(actualIds, expectedIds)) failures.push(displayName);
     }
 
     if (currentDriveItem.name !== desiredFilename) {
@@ -1869,7 +1868,6 @@ async function verifySavedMetadata(contentType, desiredFilename) {
             String(currentDocumentFields?.ContentTypeId || "");
 
         if (
-            actualContentTypeId &&
             !actualContentTypeId.toLowerCase().startsWith(
                 String(contentType.id).toLowerCase()
             )
@@ -1887,28 +1885,16 @@ async function verifySavedMetadata(contentType, desiredFilename) {
     await hydrateAllControls();
 }
 
-function verifyTaxonomyField(failures, displayName, expectedLabel) {
-    if (!expectedLabel) return;
+function sameValueSet(actual, expected) {
+    const left = [...new Set(actual)].sort();
+    const right = [...new Set(expected)].sort();
+    return left.length === right.length && left.every((value, index) => value === right[index]);
+}
 
-    const actualLabels =
-        taxonomyLabelsFromField(getFieldValue(displayName));
-
-    const found = actualLabels.some((label) => {
-        const comparableLabel =
-            displayName === "Function"
-                ? String(label || "")
-                    .split(/[;:>\\/]/)
-                    .pop()
-                    .trim()
-                : label;
-
-        return normalizeName(comparableLabel) ===
-            normalizeName(expectedLabel);
-    });
-
-    if (!found) {
-        failures.push(displayName);
-    }
+function verifyLabelSet(failures, displayName, actual, expected) {
+    const normalize = value => normalizeName(displayName === "Function"
+        ? String(value || "").split(/[;:>\\/]/).pop().trim() : value);
+    if (!sameValueSet(actual.map(normalize), expected.map(normalize))) failures.push(displayName);
 }
 
 /* FIELD PARSING */
