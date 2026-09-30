@@ -35,4 +35,8 @@ npm run manifest:azure -- https://thankful-sky-0cc1b0210.6.azurestaticapps.net
 
 The centrally deployed Office manifest is managed separately. Website deployments do not automatically replace that manifest.
 
-Next planned changes: automatic pane opening and eliminating the double authentication window. This deployment setup preserves the existing authentication behavior.
+The fallback sign-in obtains Graph and SharePoint tokens in one Office dialog. It requests consent for both APIs, uses a refresh token only inside the dialog to obtain the second access token, and keeps any additional consent or MFA in the same window. Access tokens are cached in pane memory; refresh tokens are never sent to the pane.
+
+Authentication regression checks: `node --test tests/auth-flow.test.cjs`.
+
+Next planned changes: automatic pane opening and fixing template fields so the document page reflects saved metadata.

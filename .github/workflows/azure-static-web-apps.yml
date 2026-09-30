@@ -31,6 +31,8 @@ jobs:
           fi
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check authentication flow
+        run: node --test tests/auth-flow.test.cjs
       - name: Build Azure frontend
         run: npm run build:azure
       - name: Generate Azure Office manifest

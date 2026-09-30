@@ -135,6 +135,9 @@ Office.onReady(() => {
 /* AUTHENTICATION */
 
 async function acquireToken(scopes) {
+    const resource = scopes[0].startsWith("https://rocktwpnet") ? "sharepoint" : "graph";
+    const cached = dialogTokens.get(resource);
+    if (cached && cached.expires > Date.now() + 120000) return cached.token;
     const request = { scopes };
 
     try {
@@ -162,6 +165,7 @@ function acquireDialogToken(scopes) {
         const url = new URL("auth.html", window.location.href);
         url.searchParams.set("resource", resource);
         url.searchParams.set("nonce", nonce);
+        if (currentUser?.userPrincipalName) url.searchParams.set("login_hint", currentUser.userPrincipalName);
         Office.context.ui.displayDialogAsync(url.href, {height:60, width:35, displayInIframe:false}, result => {
             if (result.status !== Office.AsyncResultStatus.Succeeded) {
                 reject(new Error(result.error.message + " Use Connect to DORK to retry.")); return;
@@ -175,8 +179,14 @@ function acquireDialogToken(scopes) {
                 if (data.nonce !== nonce) return;
                 clearTimeout(timer); dialog.close();
                 if (data.error) { reject(new Error(data.error)); return; }
-                if (typeof data.token !== "string" || !Number.isFinite(data.expires)) { reject(new Error("Invalid sign-in response.")); return; }
-                dialogTokens.set(resource, data); resolve(data.token);
+                const tokens = data.tokens;
+                if (!tokens || !["graph", "sharepoint"].every(name =>
+                    typeof tokens[name]?.token === "string" && tokens[name].token.length > 0 &&
+                    Number.isFinite(tokens[name].expires) && tokens[name].expires > Date.now() + 120000)) {
+                    reject(new Error("Invalid sign-in response.")); return;
+                }
+                for (const name of ["graph", "sharepoint"]) dialogTokens.set(name, tokens[name]);
+                resolve(tokens[resource].token);
             });
             dialog.addEventHandler(Office.EventType.DialogEventReceived, () => {
                 clearTimeout(timer); reject(new Error("Sign-in window closed. Use Connect to DORK to retry."));
