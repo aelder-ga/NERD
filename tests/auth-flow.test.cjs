@@ -117,3 +117,47 @@ test('Concurrent Graph and SharePoint calls use one dialog and cache both tokens
     assert.equal(await context.acquire(['https://rocktwpnet.sharepoint.com/AllSites.Write']), 'sharepoint-token');
     assert.equal(dialogCount, 1);
 });
+
+test('Successful dialog close event cannot reject authentication; pane reload reuses both tokens', async () => {
+    const storage = new Map();
+    let count = 0, callback, url;
+    const handlers = {};
+    const makeContext = () => ({
+        URL, crypto: webcrypto, console: {warn() {}}, setTimeout: () => 1, clearTimeout() {},
+        window: {location: {origin, href: origin + '/taskpane.html'}}, currentUser: null,
+        sessionStorage: {getItem: k => storage.get(k), setItem: (k,v) => storage.set(k,v), removeItem: k => storage.delete(k)},
+        msalInstance: {acquireTokenSilent: async () => {throw new Error('No host token');}},
+        Office: {AsyncResultStatus: {Succeeded: 'ok'}, EventType: {DialogMessageReceived: 'message', DialogEventReceived: 'event'}, context: {ui: {
+            displayDialogAsync: (u, options, handler) => {count++; url = new URL(u); callback = handler;},
+        }}},
+    });
+    const block = paneSource.split('/* AUTHENTICATION */')[1].split('/* GRAPH */')[0];
+    const first = makeContext();
+    vm.runInNewContext(block + '\nglobalThis.acquire = acquireToken;', first);
+    const pending = first.acquire(['User.Read']);
+    await new Promise(resolve => setImmediate(resolve));
+    callback({status: 'ok', value: {
+        close() {handlers.event({error: 12006});},
+        addEventHandler(name, handler) {handlers[name] = handler;},
+    }});
+    handlers.message({origin, message: JSON.stringify({nonce: url.searchParams.get('nonce'), tokens: {
+        graph: {token: 'graph-token', expires: Date.now() + 3600000},
+        sharepoint: {token: 'sp-token', expires: Date.now() + 3600000},
+    }})});
+    assert.equal(await pending, 'graph-token');
+    const second = makeContext();
+    vm.runInNewContext(block + '\nglobalThis.acquire = acquireToken;', second);
+    assert.equal(await second.acquire(['User.Read']), 'graph-token');
+    assert.equal(await second.acquire(['https://rocktwpnet.sharepoint.com/AllSites.Write']), 'sp-token');
+    assert.equal(count, 1);
+});
+
+test('Expired or incomplete session cache is discarded', () => {
+    const block = paneSource.split('/* AUTHENTICATION */')[1].split('/* GRAPH */')[0];
+    for (const saved of [{graph: {token: 'old', expires: Date.now() - 1}}, {graph: {token: 'ok', expires: Date.now() + 3600000}}]) {
+        let removed = false;
+        const context = {sessionStorage: {getItem: () => JSON.stringify(saved), removeItem: () => {removed = true;}}};
+        vm.runInNewContext(block, context);
+        assert.equal(removed, true);
+    }
+});

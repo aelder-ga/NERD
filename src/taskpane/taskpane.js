@@ -154,7 +154,19 @@ async function acquireToken(scopes) {
     }
 }
 
+const dialogCacheKey = "nerd-dialog-access-tokens-v1";
+const validDialogToken = value => typeof value?.token === "string" && value.token.length > 0 &&
+    Number.isFinite(value.expires) && value.expires > Date.now() + 120000;
 const dialogTokens = new Map();
+// Tab-session storage survives pane reloads; refresh tokens remain in the dialog.
+try {
+    const saved = JSON.parse(sessionStorage.getItem(dialogCacheKey) || "null");
+    if (saved && ["graph", "sharepoint"].every(name => validDialogToken(saved[name]))) {
+        for (const name of ["graph", "sharepoint"]) dialogTokens.set(name, saved[name]);
+    } else {
+        sessionStorage.removeItem(dialogCacheKey);
+    }
+} catch (_) { /* Storage can be unavailable in restricted Office clients. */ }
 let activeAuthDialog = null;
 function acquireDialogToken(scopes) {
     const resource = scopes[0].startsWith("https://rocktwpnet") ? "sharepoint" : "graph";
@@ -172,24 +184,29 @@ function acquireDialogToken(scopes) {
                 reject(new Error(result.error.message + " Use Connect to DORK to retry.")); return;
             }
             const dialog = result.value;
-            const timer = setTimeout(() => { dialog.close(); reject(new Error("Sign-in timed out. Use Connect to DORK to retry.")); }, 300000);
+            let settled = false;
+            const timer = setTimeout(() => { settled = true; dialog.close(); reject(new Error("Sign-in timed out. Use Connect to DORK to retry.")); }, 300000);
             dialog.addEventHandler(Office.EventType.DialogMessageReceived, event => {
+                if (settled) return;
                 if (event.origin && event.origin !== window.location.origin) return;
                 let data;
                 try { data = JSON.parse(event.message); } catch (_) { return; }
                 if (data.nonce !== nonce) return;
+                settled = true;
                 clearTimeout(timer); dialog.close();
                 if (data.error) { reject(new Error(data.error)); return; }
                 const tokens = data.tokens;
                 if (!tokens || !["graph", "sharepoint"].every(name =>
-                    typeof tokens[name]?.token === "string" && tokens[name].token.length > 0 &&
-                    Number.isFinite(tokens[name].expires) && tokens[name].expires > Date.now() + 120000)) {
+                    validDialogToken(tokens[name]))) {
                     reject(new Error("Invalid sign-in response.")); return;
                 }
                 for (const name of ["graph", "sharepoint"]) dialogTokens.set(name, tokens[name]);
+                try { sessionStorage.setItem(dialogCacheKey, JSON.stringify(tokens)); } catch (_) {}
                 resolve(tokens[resource].token);
             });
             dialog.addEventHandler(Office.EventType.DialogEventReceived, () => {
+                if (settled) return;
+                settled = true;
                 clearTimeout(timer); reject(new Error("Sign-in window closed. Use Connect to DORK to retry."));
             });
         });
