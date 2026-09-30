@@ -1,4 +1,5 @@
 import { createNestablePublicClientApplication } from "@azure/msal-browser";
+import { configureAutoOpen } from "./auto-open";
 
 /* global document, Office */
 
@@ -644,6 +645,7 @@ async function initializeCurrentDocument() {
     currentDocumentFields = currentListItem.fields || {};
 
     await hydrateAllControls();
+    await configureAutoOpen();
     enableSave();
     setConnectedStatus();
 }

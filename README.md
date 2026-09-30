@@ -39,4 +39,8 @@ The fallback sign-in obtains Graph and SharePoint tokens in one Office dialog. I
 
 Authentication regression checks: `node --test tests/auth-flow.test.cjs`.
 
-Next planned changes: automatic pane opening and fixing template fields so the document page reflects saved metadata.
+NERD enables automatic pane opening after successfully loading a document in the DORK Documents library. The setting is saved inside that document. Existing explicit opt-outs are preserved; the pane checkbox allows turning it off or back on. Unsupported clients hide the option, and settings-save failures do not block metadata saves.
+
+Existing documents need one manual NERD opening to be tagged. Templates must also be tagged to give newly created documents this behavior from their first opening. The existing manifest already contains the required TaskpaneId; no manifest update is needed.
+
+Next planned changes: fix template fields so the document page reflects saved metadata, and enable automatic opening in those templates.
