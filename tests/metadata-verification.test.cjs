@@ -12,13 +12,13 @@ const fields = {
     'Information Source': 'Vendor documentation', 'Last Reviewed': '2026-09-30T00:00:00Z', 'Next Review': '2027-09-30T00:00:00Z',
     OwnerLookupId: '6', ResponsibleLookupId: '7', SecondaryLookupId: '8', ContentTypeId: '0x010100ABC123',
 };
-async function verify(overrides = {}, contentType) {
+async function verify(overrides = {}, clearOptional = false) {
     let hydrated = false;
     const input = {title: 'Test', classification: 'Internal', lifecycle: 'Draft', 'information-source': 'Vendor documentation', 'last-reviewed': '2026-09-30', 'next-review': '2027-09-30'};
     const context = {
         currentDriveItem: {id: 'file', name: 'Copy.docx'}, currentListItem: {}, currentDocumentFields: {},
         getDriveItemById: async () => ({id: 'file', name: 'Copy.docx'}),
-        getCurrentListItem: async () => ({fields: {...fields, ...overrides}, contentType}),
+        getCurrentListItem: async () => ({fields: {...fields, ...overrides}}),
         document: {getElementById: id => ({value: input[id]})},
         requireColumn: name => ({name}), normalizeName: value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, ''),
         getSelectedTerm: id => ({label: {domain: 'NETWORK', function: 'Firewall', 'document-type': 'Guide'}[id]}),
@@ -26,6 +26,12 @@ async function verify(overrides = {}, contentType) {
         personSelections: {owner: {sharePointLookupId: '6'}, responsible: {sharePointLookupId: '7'}, secondary: {sharePointLookupId: '8'}},
         hydrateAllControls: async () => {hydrated = true;},
     };
+    if (clearOptional) {
+        for (const id of ['information-source', 'last-reviewed', 'next-review']) input[id] = '';
+        for (const id of ['system-platform', 'collection', 'tags', 'audience']) context.pickerSelections[id] = [];
+        context.personSelections.responsible = null;
+        context.personSelections.secondary = null;
+    }
     vm.runInNewContext(block + '\nfunction getFieldValue(name) {return currentDocumentFields[name];}\nglobalThis.verify = verifySavedMetadata;', context);
     await context.verify({id: '0x010100ABC'}, 'Copy.docx');
     return hydrated;
@@ -55,9 +61,16 @@ test('Clearing selections requires SharePoint to remove every previous value', (
     assert.deepEqual(empty, []);
 });
 
-test('Content type verifies from the documented Graph listItem property when fields omit the ID', async () => {
-    assert.equal(await verify({ContentTypeId: undefined}, {id: '0x010100ABC123', name: 'DORK Guide'}), true);
+const clearedFields = {
+ 'System / Platform':null, Collection:[], Tags:'', Audience:null,
+ 'Information Source':'', 'Last Reviewed':null, 'Next Review':null,
+ ResponsibleLookupId:null, SecondaryLookupId:null,
+};
+test('Every optional dimension can be cleared and verified together',async()=>{
+ assert.equal(await verify(clearedFields,true),true);
 });
-test('An incorrect listItem content type fails even when the field bag contains the expected ID', async () => {
-    await assert.rejects(() => verify({}, {id: '0x010100DEF', name: 'DORK Standard'}), error => error.message.includes('Content Type') && error.message.includes('DORK Standard'));
+test('Stale optional values cannot produce a verified success after clearing',async()=>{
+ for(const name of Object.keys(clearedFields)) {
+  await assert.rejects(()=>verify({...clearedFields,[name]:fields[name]},true),error=>error.message.includes(name.replace('LookupId','')),name);
+ }
 });

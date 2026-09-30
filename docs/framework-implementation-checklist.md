@@ -34,9 +34,9 @@ This is a requirements audit, not certification that the tenant is fully configu
 ## Next implementation order
 
 - [ ] Resolve Owner-versus-Responsible requirement and activation approval policy.
-- [ ] Implement permanent numbering, reserving DORK-0001 for Framework.
-- [ ] Finish the document-type/template inventory and remaining metadata round-trip tests.
-- [ ] Investigate title formatting loss on page refresh and the observed Word save/reconnect warning. Rename concurrency is a hypothesis, not a confirmed cause.
+- [ ] Implement permanent numbering, reserving DORK-0001 for Framework. [Allocation and recovery plan](permanent-numbering.md) prepared; tenant registry/schema/permissions inspection is required before activation.
+- [ ] Finish the document-type/template inventory and remaining tenant metadata round-trip tests. Automated request/read-back coverage now includes clearing all nine optional fields, stale-value rejection and invalid review dates (2026-09-30).
+- [ ] Confirm title font preservation in Word: explicit per-control font preservation implemented and regression-tested (2026-09-30); tenant visual acceptance remains open. Investigate the observed Word save/reconnect warning separately. Rename concurrency is a hypothesis, not a confirmed cause.
 - [ ] Implement review confirmation, contextual schedules and overdue views.
 - [ ] Implement Superseded By / Related Documents and lifecycle navigation.
 - [ ] Create the Documentation Needed backlog and DORK operations reference sheet.
