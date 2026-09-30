@@ -1715,12 +1715,12 @@ function buildSharePointFormValues(contentType) {
     addFormValue(
         values,
         "Last Reviewed",
-        document.getElementById("last-reviewed").value
+        sharePointDateValue(document.getElementById("last-reviewed").value)
     );
     addFormValue(
         values,
         "Next Review",
-        document.getElementById("next-review").value
+        sharePointDateValue(document.getElementById("next-review").value)
     );
 
     if (contentType) {
@@ -1785,9 +1785,21 @@ function taxonomySingleValue(term) {
 function taxonomyMultiValue(items) {
     if (!items.length) return "";
 
-    return items
-        .map((item) => `-1;#${item.label}|${item.id}`)
-        .join(";#");
+    // ValidateUpdateListItem expects label/GUID pairs, without WssId prefixes.
+    return items.map((item) => `${item.label}|${item.id}`).join(";");
+}
+
+function sharePointDateValue(value) {
+    if (!value) return "";
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) throw new Error("Review dates must use YYYY-MM-DD.");
+    const [, year, month, day] = match;
+    const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    if (date.getUTCFullYear() !== Number(year) || date.getUTCMonth() + 1 !== Number(month) || date.getUTCDate() !== Number(day)) {
+        throw new Error("Review date is not a valid calendar date.");
+    }
+    // DORK's form validator explicitly requires M/D/YYYY. Keep the calendar day.
+    return `${Number(month)}/${Number(day)}/${year}`;
 }
 
 function buildDesiredFilename() {
