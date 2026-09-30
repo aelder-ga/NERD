@@ -1511,11 +1511,11 @@ async function saveMetadata() {
         setSaveStatus("Resolving document type...", "working");
         const contentType = await resolveDesiredContentType();
         const formValues = buildSharePointFormValues(contentType);
+        // Decide before verification replaces the loaded SharePoint fields.
+        const desiredFilename = buildDesiredFilename();
 
         setSaveStatus("Saving metadata...", "working");
         await validateUpdateListItem(formValues);
-
-        const desiredFilename = buildDesiredFilename();
 
         if (desiredFilename !== currentDriveItem.name) {
             setSaveStatus("Renaming document...", "working");
@@ -1791,6 +1791,9 @@ function buildDesiredFilename() {
     }
 
     const currentName = currentDriveItem.name;
+    const loadedTitle = String(getFieldValue("Title") || "").trim();
+    // Copies may share a Title while having deliberately different filenames.
+    if (title === loadedTitle) return currentName;
     const dot = currentName.lastIndexOf(".");
     const extension = dot > 0 ? currentName.substring(dot) : ".docx";
 
