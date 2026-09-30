@@ -1,0 +1,491 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+    background: #ffffff;
+    color: #323130;
+}
+
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+button,
+input,
+select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+.nerd-container {
+    width: 100%;
+    min-height: 100vh;
+    background: #ffffff;
+}
+
+.nerd-brand {
+    padding: 14px 18px 5px;
+    color: #605e5c;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.45px;
+    text-transform: uppercase;
+}
+
+.nerd-header {
+    padding: 0 18px 14px;
+    border-bottom: 1px solid #edebe9;
+}
+
+.nerd-header h1 {
+    margin: 0;
+    color: #201f1e;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.nerd-main {
+    padding: 16px 18px 24px;
+}
+
+.nerd-connection-status {
+    margin-bottom: 18px;
+    padding: 10px 12px;
+    border: 1px solid #d2d0ce;
+    border-radius: 4px;
+    background: #faf9f8;
+    color: #605e5c;
+    font-size: 12px;
+    line-height: 1.45;
+    white-space: pre-line;
+}
+
+.nerd-section {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid #edebe9;
+}
+
+.nerd-section-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 14px;
+    color: #323130;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.nerd-section-title .ms-Icon {
+    color: #0078d4;
+    font-size: 15px;
+}
+
+.nerd-field {
+    margin-bottom: 15px;
+}
+
+.nerd-field > label {
+    display: block;
+    margin-bottom: 6px;
+    color: #323130;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.nerd-field input[type="text"],
+.nerd-field input[type="date"],
+.nerd-field select {
+    width: 100%;
+    min-height: 34px;
+    padding: 6px 9px;
+    border: 1px solid #8a8886;
+    border-radius: 2px;
+    outline: none;
+    background: #ffffff;
+    color: #323130;
+    font-size: 13px;
+}
+
+.nerd-field input:hover,
+.nerd-field select:hover {
+    border-color: #323130;
+}
+
+.nerd-field input:focus,
+.nerd-field select:focus {
+    border-color: #0078d4;
+    box-shadow: inset 0 0 0 1px #0078d4;
+}
+
+.nerd-field select:disabled,
+.nerd-field input:disabled {
+    border-color: #edebe9;
+    background: #f3f2f1;
+    color: #a19f9d;
+    cursor: not-allowed;
+}
+
+.nerd-field-hint {
+    margin-top: 5px;
+    color: #605e5c;
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+/* -------------------------------------------------------------------------
+   Compact multi-value pickers
+   ------------------------------------------------------------------------- */
+
+.nerd-picker,
+.nerd-person-picker {
+    position: relative;
+    width: 100%;
+}
+
+.nerd-picker-selected,
+.nerd-person-selected {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.nerd-picker-selected:empty,
+.nerd-person-selected:empty {
+    display: none;
+    margin-bottom: 0;
+}
+
+.nerd-picker-input-row,
+.nerd-person-input-row {
+    display: flex;
+    width: 100%;
+    min-height: 34px;
+    border: 1px solid #8a8886;
+    border-radius: 2px;
+    background: #ffffff;
+}
+
+.nerd-picker-input-row:focus-within,
+.nerd-person-input-row:focus-within {
+    border-color: #0078d4;
+    box-shadow: inset 0 0 0 1px #0078d4;
+}
+
+.nerd-picker-input-row input,
+.nerd-person-input-row input {
+    flex: 1;
+    min-width: 0;
+    min-height: 32px;
+    padding: 6px 9px;
+    border: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent;
+    color: #323130;
+    font-size: 13px;
+}
+
+.nerd-picker-toggle {
+    width: 34px;
+    min-width: 34px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #605e5c;
+}
+
+.nerd-picker-toggle:hover {
+    background: #f3f2f1;
+    color: #201f1e;
+}
+
+.nerd-picker-menu,
+.nerd-person-menu {
+    position: absolute;
+    z-index: 1000;
+    top: calc(100% + 3px);
+    left: 0;
+    right: 0;
+    max-height: 220px;
+    overflow-y: auto;
+    border: 1px solid #c8c6c4;
+    border-radius: 2px;
+    background: #ffffff;
+    box-shadow:
+        0 3px 6px rgba(0, 0, 0, 0.12),
+        0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.nerd-picker-option,
+.nerd-person-option {
+    display: block;
+    width: 100%;
+    padding: 8px 10px;
+    border: 0;
+    border-bottom: 1px solid #f3f2f1;
+    background: #ffffff;
+    color: #323130;
+    text-align: left;
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.nerd-picker-option:last-child,
+.nerd-person-option:last-child {
+    border-bottom: 0;
+}
+
+.nerd-picker-option:hover,
+.nerd-person-option:hover {
+    background: #f3f2f1;
+}
+
+.nerd-picker-option.is-selected {
+    background: #eff6fc;
+}
+
+.nerd-picker-empty,
+.nerd-person-empty {
+    padding: 9px 10px;
+    color: #605e5c;
+    font-size: 12px;
+}
+
+.nerd-picker-create {
+    display: block;
+    width: 100%;
+    padding: 9px 10px;
+    border: 0;
+    background: #eff6fc;
+    color: #005a9e;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.nerd-picker-create:hover {
+    background: #deecf9;
+}
+
+/* -------------------------------------------------------------------------
+   Selected-value chips
+   ------------------------------------------------------------------------- */
+
+.nerd-chip {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    min-height: 26px;
+    border-radius: 2px;
+    background: #f3f2f1;
+    color: #323130;
+    font-size: 12px;
+}
+
+.nerd-chip-label {
+    overflow: hidden;
+    padding: 4px 4px 4px 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nerd-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #605e5c;
+}
+
+.nerd-chip-remove:hover {
+    background: #e1dfdd;
+    color: #201f1e;
+}
+
+.nerd-chip-remove .ms-Icon {
+    font-size: 10px;
+}
+
+/* -------------------------------------------------------------------------
+   People
+   ------------------------------------------------------------------------- */
+
+.nerd-person-option-name {
+    display: block;
+    color: #323130;
+    font-weight: 600;
+}
+
+.nerd-person-option-detail {
+    display: block;
+    margin-top: 2px;
+    overflow: hidden;
+    color: #605e5c;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nerd-person-chip {
+    background: #eff6fc;
+}
+
+/* -------------------------------------------------------------------------
+   Additional metadata
+   ------------------------------------------------------------------------- */
+
+.nerd-additional-section {
+    padding-top: 12px;
+}
+
+.nerd-additional-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 7px 0;
+    border: 0;
+    background: transparent;
+    color: #323130;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.nerd-additional-toggle:hover {
+    color: #0078d4;
+}
+
+.nerd-additional-toggle .ms-Icon {
+    color: #605e5c;
+    font-size: 12px;
+}
+
+.nerd-additional-content {
+    padding-top: 14px;
+}
+
+/* -------------------------------------------------------------------------
+   Save
+   ------------------------------------------------------------------------- */
+
+.nerd-save-area {
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid #edebe9;
+}
+
+.nerd-primary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 36px;
+    padding: 7px 16px;
+    border: 1px solid #0078d4;
+    border-radius: 2px;
+    background: #0078d4;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.nerd-primary-button:hover {
+    border-color: #106ebe;
+    background: #106ebe;
+}
+
+.nerd-primary-button:active {
+    border-color: #005a9e;
+    background: #005a9e;
+}
+
+.nerd-primary-button:disabled {
+    border-color: #c8c6c4;
+    background: #c8c6c4;
+    color: #f3f2f1;
+    cursor: not-allowed;
+}
+
+.nerd-save-status {
+    min-height: 18px;
+    margin-top: 9px;
+    color: #605e5c;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.nerd-save-status.is-working {
+    color: #605e5c;
+}
+
+.nerd-save-status.is-success {
+    color: #107c10;
+}
+
+.nerd-save-status.is-error {
+    color: #a4262c;
+}
+
+/* -------------------------------------------------------------------------
+   State helpers
+   ------------------------------------------------------------------------- */
+
+.nerd-hidden {
+    display: none !important;
+}
+
+.nerd-error {
+    border-color: #a4262c !important;
+}
+
+.nerd-connection-status.is-error {
+    border-color: #f1bbbc;
+    background: #fde7e9;
+    color: #a4262c;
+}
+
+.nerd-connection-status.is-connected {
+    border-color: #bad80a;
+    background: #f8fff0;
+    color: #323130;
+}
+
+/* -------------------------------------------------------------------------
+   Narrow Word task panes
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 340px) {
+    .nerd-main {
+        padding-right: 14px;
+        padding-left: 14px;
+    }
+
+    .nerd-brand,
+    .nerd-header {
+        padding-right: 14px;
+        padding-left: 14px;
+    }
+
+    .nerd-header h1 {
+        font-size: 20px;
+    }
+}
+.nerd-logo { display:block; width:110px; height:auto; margin:0 auto 10px; }
+.nerd-brand em { font-style:italic; }
+#connect-nerd { margin:0 0 16px; padding:8px 12px; background:#14532d; color:white; border:0; border-radius:4px; cursor:pointer; }

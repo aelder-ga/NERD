@@ -1,0 +1,12 @@
+NERD Azure authentication update
+1. Add this redirect URI under Single-page application in the existing Entra NERD app:
+https://thankful-sky-0cc1b0210.6.azurestaticapps.net/auth.html
+Keep the other entries and Save.
+2. Extract this ZIP into a NEW folder. Files are already built.
+3. Open PowerShell in NERD-Azure and run:
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Deploy-NERD.ps1
+Use the existing Azure URL and deployment token.
+4. Once deployment succeeds, close the old popup, reload Test Standard in Word for the web, and open NERD. Use Connect to DORK if needed.
+No need to re-upload the centrally deployed manifest.
+Changes: Office sign-in dialog with authorization-code PKCE and explicit return message to Word; pane logo; subtitle italics; index.html and PowerShell output fix.
+Validation: production build; PKCE request and token handoff; exact target origin; rejection of invalid state and resource. Live tenant sign-in still needs verification after deployment.
