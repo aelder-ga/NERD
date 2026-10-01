@@ -1,10 +1,13 @@
-import { createNestablePublicClientApplication } from "@azure/msal-browser";
+import { PublicClientApplication, createNestablePublicClientApplication } from "@azure/msal-browser";
+import { uploadIntakeFile } from "./intake-upload";
 import { configureAutoOpen } from "./auto-open";
 import { assertSupportedHost, syncHostMetadata, saveHostDocument } from "./office-host";
 import { syncWorkbookServerProperties } from "./workbook-properties";
 import { rememberDocumentLocation, resolveDocumentLocation } from "./document-location";
 
 /* global document, Office */
+
+const intakeMode = document.body.dataset.nerdMode === "intake";
 
 const msalConfig = {
     auth: {
@@ -97,8 +100,16 @@ async function connectToDork() {
     try {
         setConnectionStatus("Connecting to DORK...");
 
-        msalInstance =
-            await createNestablePublicClientApplication(msalConfig);
+        if (!msalInstance) {
+            if (intakeMode) {
+                msalInstance = new PublicClientApplication(msalConfig);
+                await msalInstance.initialize();
+                const accounts = msalInstance.getAllAccounts();
+                if (accounts.length === 1) msalInstance.setActiveAccount(accounts[0]);
+            } else {
+                msalInstance = await createNestablePublicClientApplication(msalConfig);
+            }
+        }
 
         currentUser = await graphGet(
             `${GRAPH_ROOT}/me?$select=id,displayName,userPrincipalName,mail`
@@ -116,7 +127,8 @@ async function connectToDork() {
             initializeLibrarySchema(),
         ]);
 
-        await initializeCurrentDocument();
+        if (intakeMode) await initializeIntake();
+        else await initializeCurrentDocument();
     } catch (error) {
         console.error("NERD initialization failed:", error);
 
@@ -131,15 +143,23 @@ async function connectToDork() {
     }
 }
 
-Office.onReady(() => {
+function startInterface() {
     initializeInterface();
     document.getElementById("connect-nerd").onclick = () => connectToDork();
-    connectToDork();
-});
+    if (intakeMode) {
+        const button = document.getElementById("connect-nerd");
+        button.textContent = "Sign in to DORK";
+        button.hidden = false;
+        setConnectionStatus("Select Sign in to browse DORK files. No number is assigned until you save metadata.");
+    } else connectToDork();
+}
+if (intakeMode) startInterface();
+else Office.onReady(startInterface);
 
 /* AUTHENTICATION */
 
 async function getOfficeLoginHint() {
+    if (intakeMode) return currentUser?.userPrincipalName || null;
     try {
         const context = await Office.auth?.getAuthContext?.();
         if (context?.userPrincipalName) return context.userPrincipalName;
@@ -150,7 +170,7 @@ async function getOfficeLoginHint() {
 async function acquireToken(scopes) {
     const resource = scopes[0].startsWith("https://rocktwpnet") ? "sharepoint" : "graph";
     const cached = dialogTokens.get(resource);
-    if (cached && cached.expires > Date.now() + 120000) return cached.token;
+    if (!intakeMode && cached && cached.expires > Date.now() + 120000) return cached.token;
     const loginHint = await getOfficeLoginHint();
     const account = loginHint
         ? msalInstance.getAccountByUsername?.(loginHint)
@@ -162,6 +182,12 @@ async function acquireToken(scopes) {
         rememberSilentToken(resource, result);
         return result.accessToken;
     } catch (silentError) {
+        if (intakeMode) {
+            const result = await msalInstance.acquireTokenPopup(request);
+            msalInstance.setActiveAccount(result.account);
+            rememberSilentToken(resource, result);
+            return result.accessToken;
+        }
         // Word on the web needs the host identity to reuse the Entra session.
         const isWeb = Office.context.platform === (Office.PlatformType?.OfficeOnline || "OfficeOnline");
         if (isWeb && loginHint && typeof msalInstance.ssoSilent === "function") {
@@ -1612,6 +1638,7 @@ async function saveMetadata() {
     try {
         setSaveStatus("Validating metadata...", "working");
         validateRequiredMetadata();
+        buildDesiredFilename(); // Reject invalid filenames before reserving a number.
 
         setSaveStatus("Preparing taxonomy...", "working");
         await materializeNewTags();
@@ -1621,19 +1648,21 @@ async function saveMetadata() {
 
         setSaveStatus("Resolving document type...", "working");
         const contentType = await resolveDesiredContentType();
-        const documentId = await requestNumbering("reserve");
         const formValues = buildSharePointFormValues(contentType);
+        if (typeof intakeMode !== "undefined" && intakeMode) await assertIntakeFileClosed();
+        const documentId = await requestNumbering("reserve");
         if (documentId) formValues.push({ FieldName: requireColumn("DORK ID").name, FieldValue: documentId });
         // Decide before verification replaces the loaded SharePoint fields.
         let desiredFilename = buildDesiredFilename();
         if (documentId) {
             const dot = currentDriveItem.name.lastIndexOf(".");
-            const extension = dot > 0 ? currentDriveItem.name.substring(dot) : ".docx";
+            const extension = dot > 0 ? currentDriveItem.name.substring(dot) : (typeof intakeMode !== "undefined" && intakeMode ? "" : ".docx");
             const title = document.getElementById("title").value.trim().replace(/^DORK-\d+\s+/i, "");
             desiredFilename = `${documentId} ${title}${extension}`;
         }
 
-        const excelHost = Office.context.host === Office.HostType.Excel;
+        const browserHost = typeof intakeMode !== "undefined" && intakeMode;
+        const excelHost = !browserHost && Office.context.host === Office.HostType.Excel;
         let pageUpdated = false;
         if (excelHost) {
             // Refresh from the user's selections before hydration replaces them.
@@ -1652,7 +1681,7 @@ async function saveMetadata() {
 
         setSaveStatus("Verifying SharePoint...", "working");
         await verifySavedMetadata(contentType, currentDriveItem.name);
-        if (!excelHost) {
+        if (!excelHost && !browserHost) {
             pageUpdated = await refreshDocumentMetadata();
             if (!pageUpdated) throw new Error("Metadata saved, but document fields could not update. Filename unchanged; reopen in Editing mode and retry.");
             setSaveStatus("Saving document...", "working");
@@ -1677,6 +1706,11 @@ async function saveMetadata() {
             setSaveStatus("Metadata and number saved and verified. Registry completion is pending; save again to retry with the same number.", "error");
             return;
         }
+        if (browserHost) {
+            setSaveStatus("Metadata, filename, and DORK ID saved and verified.", "success");
+            try { await refreshIntakeFiles(); } catch { /* Verified save remains successful if list refresh fails. */ }
+            return;
+        }
         setSaveStatus(pageUpdated
             ? "Metadata saved and verified. Document fields updated."
             : "Metadata saved and verified. Document fields could not refresh; reopen NERD to retry.",
@@ -1690,6 +1724,7 @@ async function saveMetadata() {
     } finally {
         isSaving = false;
         if (saveButton) saveButton.disabled = false;
+        if (typeof intakeMode !== "undefined" && intakeMode) renderIntakeFiles();
     }
 }
 
@@ -1751,7 +1786,8 @@ async function resolveDesiredContentType() {
     if (!documentType) return null;
 
     const desiredName =
-        contentTypeMap[normalizeName(documentType.label)];
+        (intakeMode && normalizeName(documentType.label) === "reference" && /\.xlsx$/i.test(currentDriveItem.name)
+            ? "DORK Reference Sheet" : contentTypeMap[normalizeName(documentType.label)]);
 
     // Leave the existing content type when no mapping exists.
     if (!desiredName) return null;
@@ -1956,7 +1992,7 @@ function buildDesiredFilename() {
     // Copies may share a Title while having deliberately different filenames.
     if (title === loadedTitle) return currentName;
     const dot = currentName.lastIndexOf(".");
-    const extension = dot > 0 ? currentName.substring(dot) : ".docx";
+    const extension = dot > 0 ? currentName.substring(dot) : (typeof intakeMode !== "undefined" && intakeMode ? "" : ".docx");
 
     return `${title}${extension}`;
 }
@@ -2291,4 +2327,127 @@ function normalizeSearchText(value) {
 
 function getErrorMessage(error) {
     return error?.message || String(error || "Unknown error");
+}
+
+/* BROWSER INTAKE: list and selection are read-only until Save metadata. */
+let intakeFiles = [];
+let intakeUploading = false;
+const intakeUploadedIds = new Set();
+let intakeDefaults = null;
+async function initializeIntake() {
+    document.getElementById("intake-browser").hidden = false;
+    document.getElementById("intake-refresh").onclick = () => refreshIntakeFiles().catch(error => setSaveStatus(getErrorMessage(error), "error"));
+    document.getElementById("intake-search").oninput = renderIntakeFiles;
+    document.getElementById("intake-unassigned").onchange = renderIntakeFiles;
+    document.getElementById("intake-upload-input").onchange = event => uploadIntakeFiles(event.target.files);
+    const drop = document.getElementById("intake-drop");
+    drop.ondragover = event => { event.preventDefault(); drop.classList.add("drag-over"); };
+    drop.ondragleave = () => drop.classList.remove("drag-over");
+    drop.ondrop = event => { event.preventDefault(); drop.classList.remove("drag-over"); uploadIntakeFiles(event.dataTransfer.files); };
+    document.getElementById("metadata-form").hidden = false;
+    setChoiceValue("lifecycle", "Draft");
+    document.getElementById("save-metadata").disabled = true;
+    await refreshIntakeFiles();
+    setConnectedStatus();
+}
+async function refreshIntakeFiles() {
+    const items = await graphGetAll(`${GRAPH_ROOT}/sites/${encodeURIComponent(dorkSite.id)}/lists/${encodeURIComponent(dorkDocumentsLibrary.id)}/items?$expand=fields&$top=200`);
+    intakeFiles = items.filter(item => item.fields?.FileLeafRef && String(item.fields.FSObjType || "0") === "0");
+    renderIntakeFiles();
+}
+function renderIntakeFiles() {
+    const query = document.getElementById("intake-search").value.trim().toLowerCase();
+    const unassigned = document.getElementById("intake-unassigned").checked;
+    const idName = requireColumn("DORK ID").name;
+    const list = document.getElementById("intake-files");
+    list.replaceChildren();
+    const matches = intakeFiles.filter(item => (!unassigned || !item.fields[idName]) && String(item.fields.FileLeafRef).toLowerCase().includes(query));
+    document.getElementById("intake-count").textContent = `${matches.length} files`;
+    for (const item of matches) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "intake-file";
+        button.textContent = `${item.fields.FileLeafRef} — ${item.fields[idName] || "Unnumbered"}`;
+        button.disabled = isSaving;
+        button.onclick = () => selectIntakeFile(item).catch(error => setSaveStatus(getErrorMessage(error), "error"));
+        list.appendChild(button);
+    }
+    if (!matches.length) list.textContent = "No matching files. Upload files into DORK Documents, then refresh this list.";
+}
+async function selectIntakeFile(item) {
+    if (isSaving || connecting || intakeUploading) return;
+    connecting = true;
+    currentDriveItem = null;
+    currentListItem = null;
+    document.getElementById("metadata-form").hidden = true;
+    setSaveStatus("Loading file metadata...", "working");
+    try {
+        const driveItem = await graphGet(`${GRAPH_ROOT}/sites/${encodeURIComponent(dorkSite.id)}/lists/${encodeURIComponent(dorkDocumentsLibrary.id)}/items/${encodeURIComponent(item.id)}/driveItem?$select=id,name,webUrl,parentReference,sharepointIds,file,folder`);
+        if (!driveItem.file || driveItem.folder) throw new Error("Select a file, not a folder.");
+        currentDriveItem = driveItem;
+        currentDocumentUrl = driveItem.webUrl;
+        currentListItem = await getCurrentListItem(driveItem);
+        currentDocumentFields = currentListItem.fields || {};
+        await hydrateAllControls();
+        if (intakeDefaults && intakeUploadedIds.has(driveItem.id) && !getFieldValue("DORK ID")) await applyIntakeDefaults();
+        document.getElementById("intake-selected").textContent = driveItem.name;
+        document.getElementById("metadata-form").hidden = false;
+        enableSave();
+        setSaveStatus("File loaded. Close it in Word or Excel before saving here.", "");
+    } finally { connecting = false; }
+}
+
+async function assertIntakeFileClosed() {
+    const endpoint = `/_api/web/lists(guid'${dorkDocumentsLibrary.id}')/items(${currentListItem.id})/File?$select=CheckOutType,LockedByUser/Id&$expand=LockedByUser`;
+    const response = await sharePointRequest(endpoint, "GET");
+    const file = response?.d || response;
+    if (!file || file.CheckOutType === undefined) throw new Error("Could not verify whether the file is open. No new number was assigned.");
+    if (file.LockedByUser?.Id || Number(file.CheckOutType) !== 2) throw new Error("Close the file in Office and check it in before saving through GEEK. No new number was assigned.");
+}
+
+function captureIntakeDefaults() {
+    const values = Object.fromEntries(["domain", "function", "document-type", "classification", "lifecycle", "information-source", "last-reviewed", "next-review"].map(id => [id, document.getElementById(id).value]));
+    return { values, pickers: Object.fromEntries(Object.entries(pickerSelections).map(([key, value]) => [key, value.map(item => ({...item}))])), people: Object.fromEntries(Object.entries(personSelections).map(([key, value]) => [key, value ? {...value} : null])) };
+}
+async function applyIntakeDefaults() {
+    const defaults = intakeDefaults;
+    document.getElementById("domain").value = defaults.values.domain;
+    await updateFunctions();
+    for (const [id, value] of Object.entries(defaults.values)) document.getElementById(id).value = value;
+    for (const [id, value] of Object.entries(defaults.pickers)) { pickerSelections[id] = value.map(item => ({...item})); renderPickerChips(id); }
+    for (const [id, value] of Object.entries(defaults.people)) { personSelections[id] = value ? {...value} : null; renderSelectedPerson(id); }
+}
+async function uploadIntakeFiles(files) {
+    if (intakeUploading || isSaving || connecting) return;
+    const queue = Array.from(files || []);
+    if (!queue.length) return;
+    intakeDefaults = captureIntakeDefaults();
+    intakeUploading = true;
+    document.getElementById("save-metadata").disabled = true;
+    document.getElementById("intake-upload-input").disabled = true;
+    const status = document.getElementById("intake-upload-status");
+    status.replaceChildren();
+    try {
+        for (const file of queue) {
+            const row = document.createElement("p");
+            row.textContent = `${file.name}: uploading...`;
+            status.appendChild(row);
+            try {
+                const uploaded = await uploadIntakeFile(file, {
+                    createSession: (name, body) => graphRequest(`${GRAPH_ROOT}/sites/${encodeURIComponent(dorkSite.id)}/drive/root:/${encodeURIComponent(name)}:/createUploadSession`, {method:"POST", body:JSON.stringify(body)}),
+                    // The upload URL authenticates the session; do not send bearer tokens to it.
+                    putChunk: (url, body, headers) => fetch(url, {method:"PUT", body, headers}),
+                });
+                intakeUploadedIds.add(uploaded.id);
+                row.textContent = `${file.name}: uploaded, unnumbered. Select it below to review and save metadata.`;
+            } catch (error) { row.textContent = `${file.name}: ${getErrorMessage(error)}`; }
+        }
+        await refreshIntakeFiles();
+    } catch (error) { setSaveStatus(`Upload list refresh failed: ${getErrorMessage(error)}. Refresh files before retrying.`, "error"); }
+    finally {
+        intakeUploading = false;
+        document.getElementById("intake-upload-input").disabled = false;
+        document.getElementById("save-metadata").disabled = !currentDriveItem;
+        document.getElementById("intake-upload-input").value = "";
+    }
 }

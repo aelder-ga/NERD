@@ -489,3 +489,13 @@ button {
 .nerd-logo { display:block; width:110px; height:auto; margin:0 auto 10px; }
 .nerd-brand em { font-style:italic; }
 #connect-nerd { margin:0 0 16px; padding:8px 12px; background:#14532d; color:white; border:0; border-radius:4px; cursor:pointer; }
+
+body[data-nerd-mode="intake"] .nerd-container { max-width: 880px; margin: 24px auto; }
+#intake-browser { padding: 18px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; }
+#intake-search { display: block; width: 100%; box-sizing: border-box; padding: 10px; margin: 8px 0 12px; }
+#intake-files { max-height: 320px; overflow-y: auto; }
+.intake-file { display: block; width: 100%; text-align: left; padding: 12px; background: #f6f8fc; border: 1px solid #ddd; margin: 6px 0; cursor: pointer; overflow-wrap: anywhere; }
+.intake-file:hover { background: #e6efff; }
+
+#intake-drop { border: 2px dashed #778aa6; padding: 18px; border-radius: 8px; margin-bottom: 18px; background: #f6f8fc; }
+#intake-drop.drag-over { background: #e6efff; border-color: #245ac8; }

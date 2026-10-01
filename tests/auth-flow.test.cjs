@@ -13,7 +13,7 @@ async function runAuth(search, saved, responses = []) {
     const storage = new Map(saved ? [[storageKey, JSON.stringify(saved)]] : []);
     const requests = [], messages = [], redirects = [];
     let ready;
-    const context = {
+    const context = {intakeMode:false,msalInstance:null,
         URL, URLSearchParams, TextEncoder, crypto: webcrypto,
         btoa: text => Buffer.from(text, 'binary').toString('base64'),
         window: {location: {origin, search, replace: url => redirects.push(new URL(url))}},
@@ -87,7 +87,7 @@ test('Invalid or expired callback state cannot exchange or disclose tokens', asy
 test('Concurrent Graph and SharePoint calls use one dialog and cache both tokens', async () => {
     let callback, dialogUrl, dialogCount = 0, closed = 0;
     const handlers = {};
-    const context = {
+    const context = {intakeMode:false,msalInstance:null,
         URL, crypto: webcrypto, console: {warn() {}}, setTimeout: () => 1, clearTimeout() {},
         window: {location: {origin, href: origin + '/taskpane.html'}},
         currentUser: null,
@@ -122,7 +122,7 @@ test('Successful dialog close event cannot reject authentication; pane reload re
     const storage = new Map();
     let count = 0, callback, url;
     const handlers = {};
-    const makeContext = () => ({
+    const makeContext = () => ({intakeMode:false,
         URL, crypto: webcrypto, console: {warn() {}}, setTimeout: () => 1, clearTimeout() {},
         window: {location: {origin, href: origin + '/taskpane.html'}}, currentUser: null,
         sessionStorage: {getItem: k => storage.get(k), setItem: (k,v) => storage.set(k,v), removeItem: k => storage.delete(k)},
@@ -156,7 +156,7 @@ test('Expired or incomplete session cache is discarded', () => {
     const block = paneSource.split('/* AUTHENTICATION */')[1].split('/* GRAPH */')[0];
     for (const saved of [{graph: {token: 'old', expires: Date.now() - 1}}, {graph: {token: 'ok', expires: Date.now() + 3600000}}]) {
         let removed = false;
-        const context = {sessionStorage: {getItem: () => JSON.stringify(saved), removeItem: () => {removed = true;}}};
+        const context = {intakeMode:false,msalInstance:null,sessionStorage: {getItem: () => JSON.stringify(saved), removeItem: () => {removed = true;}}};
         vm.runInNewContext(block, context);
         assert.equal(removed, true);
     }

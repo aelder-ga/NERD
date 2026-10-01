@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>GEEK — DORK File Intake</title>
+
+
+
+    <link
+        rel="stylesheet"
+        href="https://res-1.cdn.office.net/files/fabric-cdn-prod_20230815.002/office-ui-fabric-core/11.1.0/css/fabric.min.css"
+    />
+
+    <link
+        href="taskpane.css"
+        rel="stylesheet"
+        type="text/css"
+    />
+</head>
+
+<body class="ms-font-m ms-Fabric" data-nerd-mode="intake">
+
+<div class="nerd-container">
+
+    <div class="nerd-brand">
+        <em>Graphic and Extras Entry Key</em>
+    </div>
+
+    <header class="nerd-header">
+        <h1>GEEK — DORK File Intake</h1>
+    </header>
+
+    <main class="nerd-main">
+
+        <div
+            id="connection-status"
+            class="nerd-connection-status"
+        >
+            Connecting to DORK...
+        </div>
+
+        <button id="connect-nerd" type="button" hidden>Connect to DORK</button>
+
+        <div id="nerd-auto-open-control" hidden style="margin: 12px 0; font-size: 12px;">
+            <label><input id="nerd-auto-open" type="checkbox" disabled /> Open NERD automatically with this document</label>
+            <div id="nerd-auto-open-status" role="status"></div>
+        </div>
+
+        <section id="intake-browser" hidden>
+            <p>Select a file already uploaded to DORK Documents. A permanent number is assigned only when you save metadata. This page updates library metadata and filenames; template fields are refreshed by NERD inside Word or Excel.</p>
+            <div id="intake-drop" tabindex="0">
+                <strong>Upload files</strong>
+                <p>Set shared metadata below, then drag files here or choose files. Each upload stays unnumbered until you select it and save metadata. Existing files are never replaced.</p>
+                <input id="intake-upload-input" type="file" multiple aria-label="Choose files to upload" />
+                <small>Up to 250 MB per file. Each file uses its own filename as its initial title.</small>
+            </div>
+            <div id="intake-upload-status" role="status" aria-live="polite"></div>
+            <label for="intake-search">Find a file</label>
+            <input id="intake-search" type="search" placeholder="Search filenames" />
+            <label><input id="intake-unassigned" type="checkbox" checked /> Show only unnumbered files</label>
+            <button id="intake-refresh" type="button">Refresh files</button>
+            <p id="intake-count" role="status"></p>
+            <div id="intake-files"></div>
+            <p>Selected file: <strong id="intake-selected">None</strong></p>
+        </section>
+        <div id="metadata-form" hidden>
+        <!-- TITLE -->
+
+        <div class="nerd-field">
+            <label for="title">Title</label>
+
+            <input
+                id="title"
+                type="text"
+                placeholder="Document title"
+            />
+        </div>
+
+        <!-- CLASSIFICATION -->
+
+        <section class="nerd-section">
+
+            <div class="nerd-section-title">
+                <i class="ms-Icon ms-Icon--Tag"></i>
+                <span>Classification</span>
+            </div>
+
+            <!-- DOMAIN -->
+
+            <div class="nerd-field">
+                <label for="domain">Domain</label>
+
+                <select id="domain">
+                    <option value="">
+                        Loading domains...
+                    </option>
+                </select>
+            </div>
+
+            <!-- FUNCTION -->
+
+            <div class="nerd-field">
+                <label for="function">Function</label>
+
+                <select id="function" disabled>
+                    <option value="">
+                        Select a domain first
+                    </option>
+                </select>
+            </div>
+
+            <!-- DOCUMENT TYPE -->
+
+            <div class="nerd-field">
+                <label for="document-type">
+                    Document Type
+                </label>
+
+                <select id="document-type">
+                    <option value="">
+                        Loading document types...
+                    </option>
+                </select>
+            </div>
+
+            <!-- SYSTEM / PLATFORM -->
+
+            <div class="nerd-field">
+
+                <label>
+                    System / Platform
+                </label>
+
+                <div
+                    id="system-platform-picker"
+                    class="nerd-picker"
+                >
+
+                    <div
+                        id="system-platform-selected"
+                        class="nerd-picker-selected"
+                    ></div>
+
+                    <div class="nerd-picker-input-row">
+
+                        <input
+                            id="system-platform-search"
+                            type="text"
+                            placeholder="Search systems..."
+                            autocomplete="off"
+                        />
+
+                        <button
+                            id="system-platform-toggle"
+                            class="nerd-picker-toggle"
+                            type="button"
+                            aria-label="Show systems"
+                        >
+                            <i class="ms-Icon ms-Icon--ChevronDown"></i>
+                        </button>
+
+                    </div>
+
+                    <div
+                        id="system-platform-menu"
+                        class="nerd-picker-menu nerd-hidden"
+                    ></div>
+
+                </div>
+
+            </div>
+
+            <!-- COLLECTION -->
+
+            <div class="nerd-field">
+
+                <label>
+                    Collection
+                </label>
+
+                <div
+                    id="collection-picker"
+                    class="nerd-picker"
+                >
+
+                    <div
+                        id="collection-selected"
+                        class="nerd-picker-selected"
+                    ></div>
+
+                    <div class="nerd-picker-input-row">
+
+                        <input
+                            id="collection-search"
+                            type="text"
+                            placeholder="Search collections..."
+                            autocomplete="off"
+                        />
+
+                        <button
+                            id="collection-toggle"
+                            class="nerd-picker-toggle"
+                            type="button"
+                            aria-label="Show collections"
+                        >
+                            <i class="ms-Icon ms-Icon--ChevronDown"></i>
+                        </button>
+
+                    </div>
+
+                    <div
+                        id="collection-menu"
+                        class="nerd-picker-menu nerd-hidden"
+                    ></div>
+
+                </div>
+
+            </div>
+
+            <!-- TAGS -->
+
+            <div class="nerd-field">
+
+                <label>
+                    Tags
+                </label>
+
+                <div
+                    id="tags-picker"
+                    class="nerd-picker"
+                >
+
+                    <div
+                        id="tags-selected"
+                        class="nerd-picker-selected"
+                    ></div>
+
+                    <div class="nerd-picker-input-row">
+
+                        <input
+                            id="tags-search"
+                            type="text"
+                            placeholder="Search or add tags..."
+                            autocomplete="off"
+                        />
+
+                        <button
+                            id="tags-toggle"
+                            class="nerd-picker-toggle"
+                            type="button"
+                            aria-label="Show tags"
+                        >
+                            <i class="ms-Icon ms-Icon--ChevronDown"></i>
+                        </button>
+
+                    </div>
+
+                    <div
+                        id="tags-menu"
+                        class="nerd-picker-menu nerd-hidden"
+                    ></div>
+
+                </div>
+
+                <div class="nerd-field-hint">
+                    Type a new tag name to add it to DORK.
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- HANDLING -->
+
+        <section class="nerd-section">
+
+            <div class="nerd-section-title">
+                <i class="ms-Icon ms-Icon--Lock"></i>
+                <span>Handling</span>
+            </div>
+
+            <div class="nerd-field">
+
+                <label for="classification">
+                    Classification
+                </label>
+
+                <select id="classification">
+                    <option value="">
+                        Select classification
+                    </option>
+                    <option value="Public">
+                        Public
+                    </option>
+                    <option value="Internal">
+                        Internal
+                    </option>
+                    <option value="Sensitive">
+                        Sensitive
+                    </option>
+                </select>
+
+            </div>
+
+            <div class="nerd-field">
+
+                <label for="lifecycle">
+                    Lifecycle
+                </label>
+
+                <select id="lifecycle">
+                    <option value="">
+                        Select lifecycle
+                    </option>
+                    <option value="Draft">
+                        Draft
+                    </option>
+                    <option value="Active">
+                        Active
+                    </option>
+                    <option value="Superseded">
+                        Superseded
+                    </option>
+                    <option value="Retired">
+                        Retired
+                    </option>
+                </select>
+
+            </div>
+
+        </section>
+
+        <!-- RESPONSIBILITY -->
+
+        <section class="nerd-section">
+
+            <div class="nerd-section-title">
+                <i class="ms-Icon ms-Icon--People"></i>
+                <span>Responsibility</span>
+            </div>
+
+            <!-- OWNER -->
+
+            <div class="nerd-field">
+
+                <label>
+                    Owner
+                </label>
+
+                <div
+                    id="owner-picker"
+                    class="nerd-person-picker"
+                >
+
+                    <div
+                        id="owner-selected"
+                        class="nerd-person-selected"
+                    ></div>
+
+                    <div class="nerd-person-input-row">
+
+                        <input
+                            id="owner-search"
+                            type="text"
+                            placeholder="Search people..."
+                            autocomplete="off"
+                        />
+
+                    </div>
+
+                    <div
+                        id="owner-menu"
+                        class="nerd-person-menu nerd-hidden"
+                    ></div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ADDITIONAL METADATA -->
+
+        <section class="nerd-section nerd-additional-section">
+
+            <button
+                id="additional-toggle"
+                class="nerd-additional-toggle"
+                type="button"
+                aria-expanded="false"
+            >
+
+                <span>
+                    Additional Metadata
+                </span>
+
+                <i
+                    id="additional-chevron"
+                    class="ms-Icon ms-Icon--ChevronDown"
+                ></i>
+
+            </button>
+
+            <div
+                id="additional-content"
+                class="nerd-additional-content nerd-hidden"
+            >
+
+                <!-- AUDIENCE -->
+
+                <div class="nerd-field">
+
+                    <label>
+                        Audience
+                    </label>
+
+                    <div
+                        id="audience-picker"
+                        class="nerd-picker"
+                    >
+
+                        <div
+                            id="audience-selected"
+                            class="nerd-picker-selected"
+                        ></div>
+
+                        <div class="nerd-picker-input-row">
+
+                            <input
+                                id="audience-search"
+                                type="text"
+                                placeholder="Select audiences..."
+                                autocomplete="off"
+                            />
+
+                            <button
+                                id="audience-toggle"
+                                class="nerd-picker-toggle"
+                                type="button"
+                                aria-label="Show audiences"
+                            >
+                                <i class="ms-Icon ms-Icon--ChevronDown"></i>
+                            </button>
+
+                        </div>
+
+                        <div
+                            id="audience-menu"
+                            class="nerd-picker-menu nerd-hidden"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+                <!-- RESPONSIBLE -->
+
+                <div class="nerd-field">
+
+                    <label>
+                        Responsible
+                    </label>
+
+                    <div
+                        id="responsible-picker"
+                        class="nerd-person-picker"
+                    >
+
+                        <div
+                            id="responsible-selected"
+                            class="nerd-person-selected"
+                        ></div>
+
+                        <div class="nerd-person-input-row">
+
+                            <input
+                                id="responsible-search"
+                                type="text"
+                                placeholder="Search people..."
+                                autocomplete="off"
+                            />
+
+                        </div>
+
+                        <div
+                            id="responsible-menu"
+                            class="nerd-person-menu nerd-hidden"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+                <!-- SECONDARY -->
+
+                <div class="nerd-field">
+
+                    <label>
+                        Secondary
+                    </label>
+
+                    <div
+                        id="secondary-picker"
+                        class="nerd-person-picker"
+                    >
+
+                        <div
+                            id="secondary-selected"
+                            class="nerd-person-selected"
+                        ></div>
+
+                        <div class="nerd-person-input-row">
+
+                            <input
+                                id="secondary-search"
+                                type="text"
+                                placeholder="Search people..."
+                                autocomplete="off"
+                            />
+
+                        </div>
+
+                        <div
+                            id="secondary-menu"
+                            class="nerd-person-menu nerd-hidden"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+                <!-- INFORMATION SOURCE -->
+
+                <div class="nerd-field">
+
+                    <label for="information-source">
+                        Information Source
+                    </label>
+
+                    <input
+                        id="information-source"
+                        type="text"
+                        placeholder="Authoritative source"
+                    />
+
+                </div>
+
+                <!-- LAST REVIEWED -->
+
+                <div class="nerd-field">
+
+                    <label for="last-reviewed">
+                        Last Reviewed
+                    </label>
+
+                    <input
+                        id="last-reviewed"
+                        type="date"
+                    />
+
+                </div>
+
+                <!-- NEXT REVIEW -->
+
+                <div class="nerd-field">
+
+                    <label for="next-review">
+                        Next Review
+                    </label>
+
+                    <input
+                        id="next-review"
+                        type="date"
+                    />
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- SAVE -->
+
+        <div class="nerd-save-area">
+
+            <button
+                id="save-metadata"
+                class="nerd-primary-button"
+                type="button"
+            >
+                <i class="ms-Icon ms-Icon--Save"></i>
+                <span>Save Metadata</span>
+            </button>
+
+        </div>
+        </div>
+
+            <div
+                id="save-status"
+                class="nerd-save-status"
+                role="status"
+                aria-live="polite"
+            ></div>
+
+    </main>
+
+</div>
+
+</body>
+</html>

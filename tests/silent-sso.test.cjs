@@ -7,7 +7,7 @@ const source = fs.readFileSync(path.join(__dirname, '../src/taskpane/taskpane.js
 const block = source.split('/* AUTHENTICATION */')[1].split('const dialogCacheKey')[0];
 function setup({platform = 'OfficeOnline', cached = false, hostError = false, ssoError = false} = {}) {
     const calls = [];
-    const context = {
+    const context = {intakeMode:false,msalInstance:null,
         console: {warn() {}}, currentUser: null, dialogTokens: new Map(),
         Office: {PlatformType: {OfficeOnline: 'OfficeOnline'}, context: {platform}, auth: {getAuthContext: async () => {if (hostError) throw Error('Unsupported'); return {userPrincipalName: 'aelder@rocktwp.net'};}}},
         msalInstance: {

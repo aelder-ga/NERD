@@ -4,11 +4,11 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
 const source = fs.readFileSync(path.join(__dirname,'../src/taskpane/taskpane.js'),'utf8');
-const block = source.split('/* STARTUP */')[1].split('Office.onReady')[0];
+const block = source.split('/* STARTUP */')[1].split('function startInterface()')[0];
 function setup(fail=false) {
     const elements = Object.fromEntries(['connect-nerd','metadata-form','save-metadata'].map(id=>[id,{hidden:false,disabled:false}]));
     const events=[];
-    const context={document:{getElementById:id=>elements[id]},console:{error(){}},msalConfig:{},GRAPH_ROOT:'graph',DORK_HOST:'host',DORK_SITE_PATH:'site',SHAREPOINT_SCOPES:['sharepoint'],
+    const context={intakeMode:false,msalInstance:null,document:{getElementById:id=>elements[id]},console:{error(){}},msalConfig:{},GRAPH_ROOT:'graph',DORK_HOST:'host',DORK_SITE_PATH:'site',SHAREPOINT_SCOPES:['sharepoint'],
         createNestablePublicClientApplication:async()=>({}),graphGet:async()=>({displayName:'Test'}),
         acquireToken:async()=>events.push('sharepoint'),
         initializeTaxonomy:async()=>events.push('taxonomy'),initializeLibrarySchema:async()=>events.push('schema'),

@@ -1,0 +1,15 @@
+# GEEK — Graphic and Extras Entry Key
+
+GEEK is the browser intake interface at `/geek.html` on the existing nerd-dork Azure Static Web App. It uses the existing NERD registration, redirect bridge, SharePoint proxy and numbering service. No new Azure resource or client secret is needed.
+
+Upload files to DORK Documents using SharePoint or GEEK, then sign into GEEK with an account that has access to that library. Browse/search the files, select one, complete the metadata, and select Save metadata. Browsing and selecting are read-only and do not allocate numbers. The unnumbered filter is enabled by default; disable it to edit an existing numbered file.
+
+Save validates metadata, checks the file is not locked or checked out, reserves the permanent identifier, writes and verifies metadata, renames preserving the original extension, verifies the resulting filename and ID, then completes the registry record. Existing IDs remain stable. Failed operations retain their reservation for a retry on the same file. The custom X-NERD-SharePoint-Authorization header remains unchanged.
+
+Close files in Office before using GEEK. The lock check reduces conflicts but is not an atomic lock across the full save; another editor can open a file after the check. GEEK updates library metadata and filenames, not document content or embedded Office metadata. For Word and Excel templates, use the NERD pane to synchronize their document fields. GEEK includes a multiple-file drag/drop upload queue. Set shared defaults before uploading; select each uploaded file to review those defaults and its own filename-derived title before Save metadata. Upload sessions explicitly fail on filename conflicts and transfer chunks without forwarding access tokens to the session URL. The initial limit is 250 MB per file; empty files are rejected. Successful uploads remain unnumbered. Failed or ambiguous uploads are not automatically retried; refresh the file list to inspect the outcome first. Link intake, document creation from templates, and hooking SharePoint’s native Create/Upload commands are future extensions. The current upload action belongs to GEEK itself.
+
+The browser uses standard MSAL with the existing sso-redirect.html bridge; Office retains its nested authentication flow. Entra can still require sign-in or consent for the browser session. No tenant-live browser acceptance is claimed until tested.
+
+Validation: 65 automated tests pass, including existing Word/Excel save ordering and authentication behavior, browser intake without an Office host, open-file rejection before allocation, read-only selection, and arbitrary file extension preservation. Azure production build passes with the existing asset-size warnings.
+
+Excel acceptance: Abraham verified save/reopen retention, removed Windows from the multi-valued System / Platform field, verified worksheet and reopened values, then restored Windows and verified again on DORK-0003. All optional dimensions have not been independently tenant-tested.
