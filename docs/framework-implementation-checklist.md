@@ -29,7 +29,7 @@ This is a requirements audit, not certification that the tenant is fully configu
 | 27 | SharePoint authoritative record; appropriate metadata | Save/read-back verification and reopened persistence tested for tested fields. | Complete dimension coverage across document types, optional clearing and lifecycle transitions. |
 | 28 | Version/audit history, archival, Sensitive security, files/visuals, export/recovery, identity integration, maintainability | Azure hosting and identity flow tested. Other tenant capabilities/configurations remain unverified. | Verify versioning, audit evidence, permission boundaries, archival and a recoverable export/restore path. |
 | 29 | CTO governance/delegation; controlled taxonomy; useful requirements | Operating practice not verified. | Record authorities, delegation and change process; distinguish controlled taxonomy from expandable terms and flexible tags. |
-| 30–31 | Classification Index and TLDR Search Only Classification Reference | Current artifacts and completeness not verified in this audit. | Locate/create and validate both references; ensure common search terms aid discovery without overriding purpose-based classification. |
+| 30–31 | Classification Index and TLDR Search Only Classification Reference | [Initial reference drafts](drafts/README.md) prepared 2026-09-30: all 62 Functions covered; final publication not complete. | Review draft search vocabulary and publish both references through DORK; common search terms must aid discovery without overriding purpose-based classification. |
 
 ## Next implementation order
 
@@ -39,7 +39,7 @@ This is a requirements audit, not certification that the tenant is fully configu
 - [ ] Confirm title font preservation in Word: explicit per-control font preservation implemented and regression-tested (2026-09-30); tenant visual acceptance remains open. Investigate the observed Word save/reconnect warning separately. Rename concurrency is a hypothesis, not a confirmed cause.
 - [ ] Implement review confirmation, contextual schedules and overdue views.
 - [ ] Implement Superseded By / Related Documents and lifecycle navigation.
-- [ ] Create the Documentation Needed backlog and DORK operations reference sheet.
+- [ ] Create the Documentation Needed backlog and publish the DORK operations document. [Usage draft](drafts/usage-guide.md) prepared 2026-09-30; approval and tenant workflow confirmation remain open.
 - [ ] Verify tenant search, Sensitive permissions, version/audit history and export/recovery.
 - [ ] Validate classification references and establish the governance/meeting practices.
 - [ ] Build the dashboard after documentation is populated: search/filter discovery, due/overdue reviews, ownership, backlog, lifecycle and relationships. Reuse authoritative SharePoint data.
