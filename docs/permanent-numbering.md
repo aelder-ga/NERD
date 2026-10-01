@@ -63,3 +63,7 @@ https://support.microsoft.com/en-us/sharepoint/admin/enable-and-configure-unique
 - [ ] Enable allocation and filename prefixes only after these gates pass.
 
 Available connector operations currently do not expose list/column provisioning or the required registry permission setup. No tenant configuration or numbering migration was performed in this change.
+
+## Progress — 2026-09-30
+
+User completed the prerequisite storage setup. Automatic numbering remains disabled. Allocator implementation, runtime configuration and acceptance verification remain outstanding. Tenant-specific configuration details are intentionally omitted from this repository note.
