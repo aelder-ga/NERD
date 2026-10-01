@@ -21,9 +21,13 @@ export async function syncReferenceCover(context, values) {
     if (!Object.entries(expected).every(([row, label]) => signature.values[Number(row)][0] === label)) {
         throw new Error('The Document Control sheet does not match the DORK Reference Sheet template. Its visible fields were not updated.');
     }
+    const documentId = String(values.DORK_DocumentId || '').trim();
+    const title = documentId
+        ? String(values.DORK_Title || '').replace(/^(?:DORK-\d+\s+)+/i, '')
+        : String(values.DORK_Title || '');
     const fields = {D10: values.DORK_Domain, D11: values.DORK_Function,
         D12: values.DORK_System, D13: values.DORK_Collection, D14: values.DORK_Classification,
-        A17: `${String(values.DORK_DocumentId || '').trim()} ${values.DORK_Title || ''}`.trim(),
+        A17: `${documentId} ${title}`.trim(),
         A24: 'Metadata maintained through NERD. Reference data begins on the next sheet.'};
     for (const [address, value] of Object.entries(fields)) {
         const cell = cover.getRange(address);

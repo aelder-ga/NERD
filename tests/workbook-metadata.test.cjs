@@ -39,6 +39,7 @@ test('Reference cover replaces repeated-save title and every visible dimension w
  await api.syncReferenceCover(context,values);
  assert.equal(ranges.A17.values[0][0],'DORK-0003 Microsoft Administration Portals');
  for(const [address,key] of Object.entries({D10:'DORK_Domain',D11:'DORK_Function',D12:'DORK_System',D13:'DORK_Collection',D14:'DORK_Classification'})) assert.equal(ranges[address].values[0][0],values[key]);
+ values.DORK_Title='DORK-0003 Microsoft Administration Portals';await api.syncReferenceCover(context,values);assert.equal(ranges.A17.values[0][0],'DORK-0003 Microsoft Administration Portals');
  values.DORK_Title='=literal title';await api.syncReferenceCover(context,values);assert.equal(ranges.A17.values[0][0],'DORK-0003 =literal title');
  assert.equal(ranges.A17.format,undefined);
  labels[2][0]='Business document';await assert.rejects(api.syncReferenceCover(context,values),/does not match/);
