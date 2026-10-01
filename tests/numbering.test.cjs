@@ -15,24 +15,24 @@ test('sequence reserves 0001 and supports more than four digits', () => {
 });
 test('concurrent requests share one reservation and different files get distinct numbers', async () => {
  const store = storage(); const rows = await Promise.all(Array.from({ length: 10 }, () => reserve(store, 'a', '/a', 1)));
- assert.equal(store.rows.size, 1); assert.ok(rows.every(row => row.fields.DorkId === 'DORK-0002'));
- assert.equal((await reserve(store, 'b', '/b', 1)).fields.DorkId, 'DORK-0003');
+ assert.equal(store.rows.size, 1); assert.ok(rows.every(row => row.fields.DorkID === 'DORK-0002'));
+ assert.equal((await reserve(store, 'b', '/b', 1)).fields.DorkID, 'DORK-0003');
 });
 test('ambiguous committed create and patch are recovered; rename retains number', async () => {
  const store = storage(), create = store.create, patch = store.patch;
  store.create = async fields => { await create(fields); throw Error('Lost response'); };
  store.patch = async (row, fields) => { await patch(row, fields); throw Error('Lost response'); };
- assert.equal((await reserve(store, 'a', '/a', 1)).fields.DorkId, 'DORK-0002');
- assert.equal((await reserve(store, 'a', '/renamed', 1)).fields.DorkId, 'DORK-0002');
+ assert.equal((await reserve(store, 'a', '/a', 1)).fields.DorkID, 'DORK-0002');
+ assert.equal((await reserve(store, 'a', '/renamed', 1)).fields.DorkID, 'DORK-0002');
 });
 test('uncommitted failures do not report allocation success', async () => {
  const store = storage(); store.create = async () => { throw Error('Forbidden'); };
  await assert.rejects(reserve(store, 'a', '/a', 1), /Forbidden/);
 });
 test('Framework mapping retained and unexpected sequence fails closed', async () => {
- const store = storage(); store.rows.set('f', { id: '7', fields: { DocumentKey: 'f', DorkId: 'DORK-0001' } });
- assert.equal((await reserve(store, 'f', '/f', 1)).fields.DorkId, 'DORK-0001');
- store.rows.set('bad', { id: '8', fields: { DocumentKey: 'bad', DorkId: 'DORK-0010' } });
+ const store = storage(); store.rows.set('f', { id: '7', fields: { DocumentKey: 'f', DorkID: 'DORK-0001' } });
+ assert.equal((await reserve(store, 'f', '/f', 1)).fields.DorkID, 'DORK-0001');
+ store.rows.set('bad', { id: '8', fields: { DocumentKey: 'bad', DorkID: 'DORK-0010' } });
  await assert.rejects(reserve(store, 'bad', '/bad', 1), /sequence mismatch/);
 });
 test('file identity validates GUID; missing caller token denied while disabled', async () => {

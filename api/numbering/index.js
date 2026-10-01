@@ -63,12 +63,12 @@ module.exports = async function (context, req) {
       },
     };
     const row = input.action === 'reserve' ? await reserve(store, key, location, offset) : await store.find(key);
-    if (!row?.fields?.DorkId) throw problem(409, 'No verified number reservation exists.');
+    if (!row?.fields?.DorkID) throw problem(409, 'No verified number reservation exists.');
     if (input.action === 'applied') {
-      if (item.DORK_x0020_ID !== row.fields.DorkId) throw problem(409, 'Document number has not been saved.');
+      if (item.DORK_x0020_ID !== row.fields.DorkID) throw problem(409, 'Document number has not been saved.');
       await store.patch(row, { AllocationState: 'Applied', CurrentLocation: location });
     }
-    reply(200, { enabled: true, documentId: row.fields.DorkId });
+    reply(200, { enabled: true, documentId: row.fields.DorkID });
   } catch (error) {
     // Never expose upstream token responses, credentials, document metadata or request bodies.
     const status = [400, 401, 403, 409, 503].includes(error.status) ? error.status : 502;

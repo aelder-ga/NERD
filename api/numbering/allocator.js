@@ -11,7 +11,7 @@ function identifier(itemId, offset) {
   }
   return `DORK-${String(number).padStart(4, '0')}`;
 }
-// Storage supplies atomic unique DocumentKey / DorkId constraints. No in-memory counter.
+// Storage supplies atomic unique DocumentKey / DorkID constraints. No in-memory counter.
 async function reserve(store, key, location, offset) {
   let row = await store.find(key);
   if (!row) {
@@ -25,16 +25,16 @@ async function reserve(store, key, location, offset) {
   if (row.fields.DocumentKey !== key) throw new Error('Registry identity mismatch.');
   const expected = identifier(row.id, offset);
   // 0001 can only be explicitly provisioned by an administrator.
-  if (row.fields.DorkId === 'DORK-0001') return row;
-  if (row.fields.DorkId && row.fields.DorkId !== expected) throw new Error('Registry sequence mismatch; administrator recovery required.');
-  if (!row.fields.DorkId) {
-    try { await store.patch(row, { DorkId: expected }); }
+  if (row.fields.DorkID === 'DORK-0001') return row;
+  if (row.fields.DorkID && row.fields.DorkID !== expected) throw new Error('Registry sequence mismatch; administrator recovery required.');
+  if (!row.fields.DorkID) {
+    try { await store.patch(row, { DorkID: expected }); }
     catch (error) {
       const committed = await store.find(key);
-      if (committed?.fields.DorkId !== expected) throw error;
+      if (committed?.fields.DorkID !== expected) throw error;
     }
     row = await store.find(key);
-    if (row?.fields.DorkId !== expected) throw new Error('Registry assignment was not verified.');
+    if (row?.fields.DorkID !== expected) throw new Error('Registry assignment was not verified.');
   }
   return row;
 }
