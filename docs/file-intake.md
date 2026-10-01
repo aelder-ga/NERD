@@ -15,3 +15,10 @@ Validation: 71 automated tests pass, including existing Word/Excel save ordering
 Excel acceptance: Abraham verified save/reopen retention, removed Windows from the multi-valued System / Platform field, verified worksheet and reopened values, then restored Windows and verified again on DORK-0003. All optional dimensions have not been independently tenant-tested.
 
 Single uploads are selected automatically after upload completes. On first selection of a new upload, the latest unsaved draft overrides the earlier upload-time snapshot. Existing numbered files always load their stored metadata. Unsupported template types such as Visual use a matching DORK type when available, otherwise the existing general DORK Document type; a missing general type fails before allocation. Re-save existing DORK-0004 to apply this content-type correction without a new number.
+
+### Launcher update and toolbar cleanup
+Launcher solution version 1.0.1.0 names the command GEEK Upload and passes the SharePoint user email as a login hint in the URL fragment (no credentials or access tokens). GEEK removes that fragment, attempts cached/silent Microsoft authentication, and offers explicit Sign in when interaction is required. Browser MSAL uses localStorage to share its cache across GEEK tabs; Office authentication is unchanged.
+
+Replace the existing geek-launcher.sppkg in SharePoint admin Manage apps with the Azure downloads package, enable the update, and apply any offered update to the existing DORK site app. Do not install a second launcher.
+
+In Documents, open the current view dropdown, Format current view, Advanced mode. Apply sharepoint/dork-command-bar.json. If formatting already exists, merge its commandBarProps into that JSON rather than replacing the existing layout. Save and refresh. Repeat for other public views that should use the same toolbar. This promotes GEEK Upload with an upload icon and hides Workflows, Integrate, Forms, Export, Sync and alerts while retaining normal file commands and grid editing. Hiding affects the context menu too; it does not disable the underlying service or change permissions.

@@ -3,13 +3,13 @@
   "alias": "GeekLauncherCommandSet",
   "componentType": "Extension",
   "extensionType": "ListViewCommandSet",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "manifestVersion": 2,
   "requiresCustomScript": false,
   "items": {
     "GEEK_UPLOAD": {
       "title": {
-        "default": "Upload with GEEK"
+        "default": "GEEK Upload"
       },
       "type": "command"
     }
@@ -22,7 +22,7 @@
     "scriptResources": {
       "geek-launcher-command-set": {
         "type": "path",
-        "path": "geek-launcher-command-set_36ebb967b4d66ec995d4.js"
+        "path": "geek-launcher-command-set_fda27f1b8f979088dfe0.js"
       },
       "@microsoft/sp-listview-extensibility": {
         "type": "component",

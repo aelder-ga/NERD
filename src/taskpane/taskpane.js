@@ -87,9 +87,13 @@ const contentTypeMap = {
 /* STARTUP */
 
 let connecting = false;
-async function connectToDork() {
+let browserInteractive = false;
+const browserLoginHint = intakeMode ? new URLSearchParams(window.location.hash.slice(1)).get("login_hint") : null;
+if (intakeMode && browserLoginHint) history.replaceState(null, "", window.location.pathname + window.location.search);
+async function connectToDork(interactive = false) {
     if (connecting) return;
     connecting = true;
+    browserInteractive = interactive;
     const connectButton = document.getElementById("connect-nerd");
     connectButton.disabled = true;
     connectButton.hidden = true;
@@ -102,10 +106,11 @@ async function connectToDork() {
 
         if (!msalInstance) {
             if (intakeMode) {
-                msalInstance = new PublicClientApplication(msalConfig);
+                msalInstance = new PublicClientApplication({...msalConfig, cache: {cacheLocation: "localStorage"}});
                 await msalInstance.initialize();
                 const accounts = msalInstance.getAllAccounts();
-                if (accounts.length === 1) msalInstance.setActiveAccount(accounts[0]);
+                const hinted = browserLoginHint && msalInstance.getAccountByUsername(browserLoginHint);
+                if (hinted || (!browserLoginHint && accounts.length === 1)) msalInstance.setActiveAccount(hinted || accounts[0]);
             } else {
                 msalInstance = await createNestablePublicClientApplication(msalConfig);
             }
@@ -127,30 +132,35 @@ async function connectToDork() {
             initializeLibrarySchema(),
         ]);
 
-        if (intakeMode) await initializeIntake();
+        if (intakeMode && currentDriveItem) {
+            document.getElementById("metadata-form").hidden = false;
+            document.getElementById("save-metadata").disabled = false;
+            setConnectedStatus();
+        } else if (intakeMode) await initializeIntake();
         else await initializeCurrentDocument();
     } catch (error) {
         console.error("NERD initialization failed:", error);
 
         setConnectionStatus(`Connection failed: ${getErrorMessage(error)}`, true);
-        connectButton.textContent = "Retry connection";
+        connectButton.textContent = intakeMode ? "Sign in to DORK" : "Retry connection";
         connectButton.hidden = false;
 
         setSaveStatus(getErrorMessage(error), "error");
     } finally {
         connecting = false;
+        browserInteractive = false;
         document.getElementById("connect-nerd").disabled = false;
     }
 }
 
 function startInterface() {
     initializeInterface();
-    document.getElementById("connect-nerd").onclick = () => connectToDork();
+    document.getElementById("connect-nerd").onclick = () => connectToDork(true);
     if (intakeMode) {
         const button = document.getElementById("connect-nerd");
         button.textContent = "Sign in to DORK";
         button.hidden = false;
-        setConnectionStatus("Select Sign in to browse DORK files. No number is assigned until you save metadata.");
+        connectToDork();
     } else connectToDork();
 }
 if (intakeMode) startInterface();
@@ -159,7 +169,7 @@ else Office.onReady(startInterface);
 /* AUTHENTICATION */
 
 async function getOfficeLoginHint() {
-    if (intakeMode) return currentUser?.userPrincipalName || null;
+    if (intakeMode) return currentUser?.userPrincipalName || browserLoginHint || null;
     try {
         const context = await Office.auth?.getAuthContext?.();
         if (context?.userPrincipalName) return context.userPrincipalName;
@@ -183,7 +193,18 @@ async function acquireToken(scopes) {
         return result.accessToken;
     } catch (silentError) {
         if (intakeMode) {
-            const result = await msalInstance.acquireTokenPopup(request);
+            let result;
+            try {
+                result = await msalInstance.ssoSilent(request);
+            } catch (_) {
+                if (!browserInteractive) {
+                    const button = document.getElementById("connect-nerd");
+                    button.textContent = "Sign in to DORK";
+                    button.hidden = false;
+                    throw new Error("Microsoft requires sign-in. Select Sign in to DORK to continue.");
+                }
+                result = await msalInstance.acquireTokenPopup(request);
+            }
             msalInstance.setActiveAccount(result.account);
             rememberSilentToken(resource, result);
             return result.accessToken;

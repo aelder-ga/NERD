@@ -4,13 +4,13 @@
   "alias": "GeekLauncherCommandSet",
   "componentType": "Extension",
   "extensionType": "ListViewCommandSet",
-  "version": "*",
+  "version": "0.0.2",
   "manifestVersion": 2,
   "requiresCustomScript": false,
   "items": {
     "GEEK_UPLOAD": {
       "title": {
-        "default": "Upload with GEEK"
+        "default": "GEEK Upload"
       },
       "type": "command"
     }

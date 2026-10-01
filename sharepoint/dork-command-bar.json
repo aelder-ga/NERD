@@ -1,0 +1,51 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/sp/v2/row-formatting.schema.json",
+  "commandBarProps": {
+    "commands": [
+      {
+        "key": "SpfxCustomActionNavigationCommand_99c231a1-a31c-48ed-b6a5-919d89235101GEEK_UPLOAD",
+        "text": "GEEK Upload",
+        "iconName": "Upload",
+        "sectionType": "Primary",
+        "position": 0,
+        "primary": true
+      },
+      {
+        "key": "workflowsCommand",
+        "hide": true
+      },
+      {
+        "key": "integrate",
+        "hide": true
+      },
+      {
+        "key": "manageForms",
+        "hide": true
+      },
+      {
+        "key": "export",
+        "hide": true
+      },
+      {
+        "key": "exportExcel",
+        "hide": true
+      },
+      {
+        "key": "syncCommand",
+        "hide": true
+      },
+      {
+        "key": "sync",
+        "hide": true
+      },
+      {
+        "key": "alertMe",
+        "hide": true
+      },
+      {
+        "key": "manageAlert",
+        "hide": true
+      }
+    ]
+  }
+}

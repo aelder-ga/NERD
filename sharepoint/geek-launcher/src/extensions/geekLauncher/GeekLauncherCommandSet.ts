@@ -11,7 +11,9 @@ export default class GeekLauncherCommandSet extends BaseListViewCommandSet<Recor
   }
   public onExecute(event: IListViewCommandSetExecuteEventParameters): void {
     if (event.itemId !== 'GEEK_UPLOAD' || !this._isDorkLibrary()) return;
-    window.open(GEEK_URL, '_blank', 'noopener,noreferrer');
+    const email = this.context.pageContext.user?.email;
+    const url = email ? GEEK_URL + '#login_hint=' + encodeURIComponent(email) : GEEK_URL;
+    window.open(url, '_blank', 'noopener,noreferrer');
   }
   public onDispose(): void {
     this.context.listView.listViewStateChangedEvent.remove(this, this._onListViewStateChanged);
