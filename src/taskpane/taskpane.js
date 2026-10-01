@@ -703,7 +703,9 @@ async function initializeCurrentDocument() {
     currentDocumentFields = currentListItem.fields || {};
 
     await hydrateAllControls();
-    await refreshDocumentMetadata();
+    // Excel startup must be read-only for worksheet metadata: a partial or stale
+    // library response must never erase a previously saved workbook cover.
+    if (Office.context.host !== Office.HostType.Excel) await refreshDocumentMetadata();
     await configureAutoOpen();
     document.getElementById("metadata-form").hidden = false;
     enableSave();
@@ -1630,15 +1632,28 @@ async function saveMetadata() {
             desiredFilename = `${documentId} ${title}${extension}`;
         }
 
+        const excelHost = Office.context.host === Office.HostType.Excel;
+        let pageUpdated = false;
+        if (excelHost) {
+            // Refresh from the user's selections before hydration replaces them.
+            // Include the newly reserved identifier on the first save.
+            if (documentId) currentDocumentFields[requireColumn("DORK ID").name] = documentId;
+            setSaveStatus("Saving workbook fields...", "working");
+            pageUpdated = await refreshDocumentMetadata();
+            if (!pageUpdated) throw new Error("Workbook fields could not update. Metadata save stopped.");
+            await saveHostDocument();
+        }
         setSaveStatus("Saving metadata...", "working");
         await validateUpdateListItem(formValues);
 
         setSaveStatus("Verifying SharePoint...", "working");
         await verifySavedMetadata(contentType, currentDriveItem.name);
-        const pageUpdated = await refreshDocumentMetadata();
-        if (!pageUpdated) throw new Error("Metadata saved, but document fields could not update. Filename unchanged; reopen in Editing mode and retry.");
-        setSaveStatus("Saving document...", "working");
-        await saveHostDocument();
+        if (!excelHost) {
+            pageUpdated = await refreshDocumentMetadata();
+            if (!pageUpdated) throw new Error("Metadata saved, but document fields could not update. Filename unchanged; reopen in Editing mode and retry.");
+            setSaveStatus("Saving document...", "working");
+            await saveHostDocument();
+        }
 
         // Finish all document edits before changing the path underneath its open session.
         // No content-control writes or document saves may follow this rename.

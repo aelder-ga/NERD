@@ -33,3 +33,9 @@ test('Failed startup keeps Save unavailable and provides a working retry button'
     assert.equal(elements['connect-nerd'].textContent,'Retry connection');
     assert.ok(events.includes('Connection failed: Discovery failed'));
 });
+
+test('Excel reopen hydrates the pane without any worksheet metadata write',async()=>{
+ const init=source.substring(source.indexOf('async function initializeCurrentDocument()'),source.indexOf('function getCurrentDocumentUrl()'));
+ const events=[];const ctx={Office:{context:{host:'Excel'},HostType:{Excel:'Excel'}},assertSupportedHost(){},getCurrentDocumentUrl:async()=> 'https://example/doc.xlsx',getDorkLibraryRelativePath:()=> 'doc.xlsx',resolveDocumentLocation:async()=>({id:'file'}),window:{sessionStorage:{}},dorkSite:{id:'site'},dorkDocumentsLibrary:{id:'list'},getDriveItemByPath(){},getDriveItemById(){},getCurrentListItem:async()=>({fields:{Title:'Saved'}}),hydrateAllControls:async()=>events.push('hydrate'),refreshDocumentMetadata:async()=>events.push('write'),configureAutoOpen:async()=>{},document:{getElementById:()=>({})},enableSave(){},setConnectedStatus(){}};
+ vm.runInNewContext(init+'\nglobalThis.initialize=initializeCurrentDocument;',ctx);await ctx.initialize();assert.deepEqual(events,['hydrate']);
+});
