@@ -1564,6 +1564,20 @@ function closeAllPersonMenus(except = null) {
 }
 /* SAVE */
 
+async function requestNumbering(action) {
+    const token = await acquireToken(SHAREPOINT_SCOPES);
+    const response = await fetch(`${API_BASE}/api/numbering`, {
+        method: "POST",
+        headers: { "X-NERD-SharePoint-Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ action, itemId: currentListItem.id }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || "Numbering request failed.");
+    if (result.enabled === false) return null;
+    if (result.enabled !== true || !/^DORK-\d{4,}$/.test(result.documentId || "")) throw new Error("Numbering did not return a verified identifier.");
+    return result.documentId;
+}
+
 async function saveMetadata() {
     if (isSaving) return;
 
@@ -1592,9 +1606,17 @@ async function saveMetadata() {
 
         setSaveStatus("Resolving document type...", "working");
         const contentType = await resolveDesiredContentType();
+        const documentId = await requestNumbering("reserve");
         const formValues = buildSharePointFormValues(contentType);
+        if (documentId) formValues.push({ FieldName: requireColumn("DORK ID").name, FieldValue: documentId });
         // Decide before verification replaces the loaded SharePoint fields.
-        const desiredFilename = buildDesiredFilename();
+        let desiredFilename = buildDesiredFilename();
+        if (documentId) {
+            const dot = currentDriveItem.name.lastIndexOf(".");
+            const extension = dot > 0 ? currentDriveItem.name.substring(dot) : ".docx";
+            const title = document.getElementById("title").value.trim().replace(/^DORK-\d+\s+/i, "");
+            desiredFilename = `${documentId} ${title}${extension}`;
+        }
 
         setSaveStatus("Saving metadata...", "working");
         await validateUpdateListItem(formValues);
@@ -1613,7 +1635,16 @@ async function saveMetadata() {
         setSaveStatus("Verifying SharePoint...", "working");
         await verifySavedMetadata(contentType, desiredFilename);
 
+        if (documentId && String(getFieldValue("DORK ID") || "") !== documentId) throw new Error("SharePoint did not verify: DORK ID.");
+        let registryUpdated = true;
+        if (documentId) {
+            try { await requestNumbering("applied"); } catch { registryUpdated = false; }
+        }
         const pageUpdated = await refreshDocumentMetadata();
+        if (!registryUpdated) {
+            setSaveStatus("Metadata and number saved and verified. Registry completion is pending; save again to retry with the same number.", "error");
+            return;
+        }
         setSaveStatus(pageUpdated
             ? "Metadata saved and verified. Document fields updated."
             : "Metadata saved and verified. Document fields could not refresh; reopen NERD to retry.",

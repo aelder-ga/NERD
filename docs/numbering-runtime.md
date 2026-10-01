@@ -1,0 +1,15 @@
+# Numbering runtime (staged)
+
+Azure API and save integration are implemented; assignment is disabled by default. Credentials belong only in backend environment settings, never frontend assets or source control.
+
+Required settings: NERD_NUMBERING_TENANT_ID, NERD_NUMBERING_CLIENT_ID, NERD_NUMBERING_CLIENT_SECRET, NERD_NUMBERING_SITE_ID, NERD_NUMBERING_REGISTRY_LIST_ID, NERD_NUMBERING_DOCUMENTS_LIST_ID, NERD_NUMBERING_SEQUENCE_OFFSET (positive integer chosen after existing-ID inventory). Leave NERD_NUMBERING_ENABLED absent until permanent-numbering.md activation gates pass. Never change the offset on an initialized registry without reconciliation.
+
+The API forwards X-NERD-SharePoint-Authorization only to the fixed DORK REST endpoint. SharePoint validates the caller and returns effective item permissions. EditListItems is required before application authentication. The file UniqueId is resolved server-side; caller-supplied identities, registry destinations and numbers are not accepted. Application identity writes only to the selected registry; document writes retain the existing delegated proxy.
+
+Unique DocumentKey and DorkId constraints are mandatory. Server-assigned registry item sequence plus configured offset provides retry recovery; no in-memory counter. Unexpected existing sequence mappings fail closed. An administrator explicitly binds the authoritative Framework file to DORK-0001; titles cannot claim it. Copies with a new file UniqueId receive new numbers. In-library rename keeps identity; identity-changing moves require administrative reconciliation and are not automatically supported.
+
+Registry recreation, restore or migration requires reconciliation of all existing mappings, the offset and historical high-water mark before activation. Never recycle numbers. CurrentLocation uses a relative path and fails explicitly above 255 characters while configured as single-line text.
+
+Save reserves an identifier, saves/verifies metadata and prefixed filename, refreshes Word fields and marks Applied. Failed saves retain Reserved mappings. Failed registry completion retains the verified document save and reports a pending completion; retry reuses its number.
+
+Tests cover same-file concurrency, different files, committed requests whose responses are lost, failed creation, retries, Framework mappings and read-only caller rejection before application authentication. Tenant acceptance still requires schema inspection, ID inventory, Framework binding, live credential verification and copy/rename/retry tests. The existing working save behavior remains in use while assignment is disabled.
