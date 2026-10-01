@@ -1,6 +1,7 @@
 import { createNestablePublicClientApplication } from "@azure/msal-browser";
 import { configureAutoOpen } from "./auto-open";
 import { assertSupportedHost, syncHostMetadata, saveHostDocument } from "./office-host";
+import { syncWorkbookServerProperties } from "./workbook-properties";
 import { rememberDocumentLocation, resolveDocumentLocation } from "./document-location";
 
 /* global document, Office */
@@ -1641,6 +1642,9 @@ async function saveMetadata() {
             setSaveStatus("Saving workbook fields...", "working");
             pageUpdated = await refreshDocumentMetadata();
             if (!pageUpdated) throw new Error("Workbook fields could not update. Metadata save stopped.");
+            const people = Object.fromEntries([["Owner", "owner"], ["Responsible", "responsible"], ["Secondary", "secondary"]]
+                .map(([name, picker]) => [requireColumn(name).name, personSelections[picker]?.displayName || ""]));
+            await syncWorkbookServerProperties(formValues, dorkColumns, people, contentType);
             await saveHostDocument();
         }
         setSaveStatus("Saving metadata...", "working");

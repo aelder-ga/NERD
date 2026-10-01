@@ -39,6 +39,7 @@
     "@babel/preset-env": "^8.0.2",
     "@types/office-js": "^1.0.377",
     "@types/office-runtime": "^1.0.35",
+    "@xmldom/xmldom": "^0.9.12",
     "acorn": "^8.11.3",
     "babel-loader": "^10.1.1",
     "copy-webpack-plugin": "^14.0.0",
