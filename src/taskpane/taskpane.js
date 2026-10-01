@@ -109,7 +109,7 @@ async function connectToDork(interactive = false) {
                 msalInstance = new PublicClientApplication({...msalConfig, cache: {cacheLocation: "localStorage"}});
                 await msalInstance.initialize();
                 const accounts = msalInstance.getAllAccounts();
-                const hinted = browserLoginHint && msalInstance.getAccountByUsername(browserLoginHint);
+                const hinted = browserLoginHint && accounts.find(account => account.username?.toLowerCase() === browserLoginHint.toLowerCase());
                 if (hinted || (!browserLoginHint && accounts.length === 1)) msalInstance.setActiveAccount(hinted || accounts[0]);
             } else {
                 msalInstance = await createNestablePublicClientApplication(msalConfig);
@@ -183,7 +183,7 @@ async function acquireToken(scopes) {
     if (!intakeMode && cached && cached.expires > Date.now() + 120000) return cached.token;
     const loginHint = await getOfficeLoginHint();
     const account = loginHint
-        ? msalInstance.getAccountByUsername?.(loginHint)
+        ? msalInstance.getAccountByUsername?.(loginHint) || msalInstance.getAllAccounts?.().find(candidate => candidate.username?.toLowerCase() === loginHint.toLowerCase())
         : msalInstance.getActiveAccount?.();
     const request = { scopes, ...(loginHint ? {loginHint} : {}), ...(account ? {account} : {}) };
 

@@ -3,12 +3,18 @@
   "commandBarProps": {
     "commands": [
       {
+        "key": "newComposite",
+        "sectionType": "Primary",
+        "position": 0,
+        "primary": true
+      },
+      {
         "key": "SpfxCustomActionNavigationCommand_99c231a1-a31c-48ed-b6a5-919d89235101GEEK_UPLOAD",
         "text": "GEEK Upload",
         "iconName": "Upload",
         "sectionType": "Primary",
-        "position": 0,
-        "primary": true
+        "position": 1,
+        "primary": false
       },
       {
         "key": "workflowsCommand",
