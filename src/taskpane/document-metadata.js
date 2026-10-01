@@ -6,9 +6,18 @@ export async function syncDocumentMetadata(values, word = Word) {
         const controls = context.document.contentControls;
         controls.load('items/tag,items/text,items/cannotEdit');
         await context.sync();
+        const coverCandidates = controls.items.filter(control =>
+            ['DORK_Title', 'DORK_DocumentId'].includes(control.tag) && control.parentTableCellOrNullObject);
+        for (const control of coverCandidates) {
+            control.parentTableCellOrNullObject.load('isNullObject');
+            control.font.load(metadataFontProperties);
+        }
+        if (coverCandidates.length) await context.sync();
+        const repairs = coverCandidates.filter(control => control.parentTableCellOrNullObject.isNullObject &&
+            control.font.size > 0 && control.font.size < 24);
         const changed = controls.items.filter(control =>
             Object.prototype.hasOwnProperty.call(values, control.tag) &&
-            control.text !== values[control.tag]);
+            (control.text !== values[control.tag] || repairs.includes(control)));
         if (!changed.length) return 0;
         // Each occurrence has its own formatting (cover title versus metadata table).
         // Word for the web can reset it when replacing content-control text.
@@ -24,7 +33,8 @@ export async function syncDocumentMetadata(values, word = Word) {
             await context.sync();
             for (let index = 0; index < changed.length; index++) {
                 const control = changed[index];
-                control.insertText(values[control.tag], 'Replace');
+                if (control.text !== values[control.tag]) control.insertText(values[control.tag], 'Replace');
+                if (repairs.includes(control)) formats[index].size = 32;
                 control.font.set(formats[index]);
             }
             await context.sync();

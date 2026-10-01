@@ -1631,18 +1631,22 @@ async function saveMetadata() {
         setSaveStatus("Saving metadata...", "working");
         await validateUpdateListItem(formValues);
 
+        setSaveStatus("Verifying SharePoint...", "working");
+        await verifySavedMetadata(contentType, currentDriveItem.name);
+        const pageUpdated = await refreshDocumentMetadata();
+        if (!pageUpdated) throw new Error("Metadata saved, but Word fields could not update. Filename unchanged; reopen in Editing mode and retry.");
+        setSaveStatus("Saving Word document...", "working");
+        await Word.run(async context => {
+            context.document.save();
+            await context.sync();
+        });
+
+        // Finish all Word edits before changing the path underneath its open session.
+        // No content-control writes or document saves may follow this rename.
         if (desiredFilename !== currentDriveItem.name) {
             setSaveStatus("Renaming document...", "working");
-
-            await validateUpdateListItem([
-                {
-                    FieldName: "FileLeafRef",
-                    FieldValue: desiredFilename,
-                },
-            ]);
+            await validateUpdateListItem([{ FieldName: "FileLeafRef", FieldValue: desiredFilename }]);
         }
-
-        setSaveStatus("Verifying SharePoint...", "working");
         await verifySavedMetadata(contentType, desiredFilename);
         rememberDocumentLocation(window.sessionStorage, dorkSite.id, dorkDocumentsLibrary.id, currentDocumentUrl, currentDriveItem);
 
@@ -1651,7 +1655,6 @@ async function saveMetadata() {
         if (documentId) {
             try { await requestNumbering("applied"); } catch { registryUpdated = false; }
         }
-        const pageUpdated = await refreshDocumentMetadata();
         if (!registryUpdated) {
             setSaveStatus("Metadata and number saved and verified. Registry completion is pending; save again to retry with the same number.", "error");
             return;

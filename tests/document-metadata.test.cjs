@@ -36,3 +36,12 @@ test('Does not assign mixed-font null properties or invalid mixed size',async()=
  const word={run:fn=>fn({document:{contentControls:{items:[item],load(){}}},sync:async()=>{}})};
  await context.refresh({DORK_Source:'New'},word);
 });
+test('Repairs an already-small standalone cover title without enlarging table metadata or changing text',async()=>{
+ const cover=control('DORK_Title','Already current',true),table=control('DORK_Title','Already current');
+ cover.parentTableCellOrNullObject={isNullObject:true,load(){}};
+ table.parentTableCellOrNullObject={isNullObject:false,load(){}};
+ cover.insertText=()=>assert.fail('Unchanged title must not be replaced');
+ const word={run:fn=>fn({document:{contentControls:{items:[cover,table],load(){}}},sync:async()=>{}})};
+ assert.equal(await context.refresh({DORK_Title:'Already current'},word),1);
+ assert.equal(cover.font.size,32);assert.equal(table.font.size,11);assert.equal(cover.cannotEdit,true);
+});
