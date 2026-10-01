@@ -4,7 +4,7 @@ The same NERD add-in supports Word and Excel through manifest version 1.0.2.0. U
 
 Excel requires ExcelApi 1.11. NERD uses the existing SharePoint metadata schema, authentication, protected proxy header, and permanent numbering registry. An assigned number uses the workbook's identity, not its filename. Renames preserve the workbook extension. Workbook changes are saved before SharePoint renames the file, following the proven Word save sequence.
 
-NERD writes a dedicated `DORK Metadata` worksheet with a version marker in A1 and the metadata fields in columns A and B. It does not activate that sheet or modify working worksheets. If an unrelated sheet already uses this name, NERD refuses to overwrite it. Metadata values are literal text, including titles beginning with formula characters. This initial integration does not populate legacy template cells or define checklist controls.
+NERD writes a dedicated `DORK Metadata` worksheet with a version marker in A1 and the metadata fields in columns A and B. It does not activate that sheet or modify working worksheets. If an unrelated sheet already uses this name, NERD refuses to overwrite it. Metadata values are literal text, including titles beginning with formula characters. The known DORK Reference Sheet Document Control layout also receives its numbered title, Domain, Function, System / Platform, Collection, and Classification. NERD checks the template headings and labels before writing these cells, preserving merged ranges and formatting. An unrecognized Document Control layout blocks a successful field-update report. Checklist controls are not yet implemented.
 
 ## Acceptance still required
 
