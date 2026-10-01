@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "geek-launcher-command-set": {
+      "components": [
+        {
+          "entrypoint": "./lib/extensions/geekLauncher/GeekLauncherCommandSet.js",
+          "manifest": "./src/extensions/geekLauncher/GeekLauncherCommandSet.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "GeekLauncherCommandSetStrings": "lib/extensions/geekLauncher/loc/{locale}.js"
+  }
+}

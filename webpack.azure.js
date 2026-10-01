@@ -23,6 +23,8 @@ module.exports = {
     new HtmlWebpackPlugin({ filename:'commands.html', template:'./src/commands/commands.html', chunks:['polyfill','commands'] }),
     new CopyWebpackPlugin({ patterns:[
       { from:'assets', to:'assets' },
+      { from:'sharepoint/geek-launcher/azure', to:'sharepoint/geek-launcher' },
+      { from:'sharepoint/geek-launcher/geek-launcher.sppkg.base64', to:'downloads/geek-launcher.sppkg', transform: content => Buffer.from(content.toString().trim(), 'base64') },
       { from:'src/taskpane/taskpane.css', to:'taskpane.css' },
       { from:'staticwebapp.config.json', to:'staticwebapp.config.json' },
     ] }),

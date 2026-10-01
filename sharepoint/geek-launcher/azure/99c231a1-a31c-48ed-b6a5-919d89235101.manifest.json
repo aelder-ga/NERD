@@ -1,0 +1,34 @@
+{
+  "id": "99c231a1-a31c-48ed-b6a5-919d89235101",
+  "alias": "GeekLauncherCommandSet",
+  "componentType": "Extension",
+  "extensionType": "ListViewCommandSet",
+  "version": "0.0.1",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "items": {
+    "GEEK_UPLOAD": {
+      "title": {
+        "default": "Upload with GEEK"
+      },
+      "type": "command"
+    }
+  },
+  "loaderConfig": {
+    "internalModuleBaseUrls": [
+      "https://thankful-sky-0cc1b0210.6.azurestaticapps.net/sharepoint/geek-launcher/"
+    ],
+    "entryModuleId": "geek-launcher-command-set",
+    "scriptResources": {
+      "geek-launcher-command-set": {
+        "type": "path",
+        "path": "geek-launcher-command-set_36ebb967b4d66ec995d4.js"
+      },
+      "@microsoft/sp-listview-extensibility": {
+        "type": "component",
+        "id": "d37b65ee-c7d8-4570-bc74-2b294ff3b380",
+        "version": "1.22.2"
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/command-set-extension-manifest.schema.json",
+  "id": "99c231a1-a31c-48ed-b6a5-919d89235101",
+  "alias": "GeekLauncherCommandSet",
+  "componentType": "Extension",
+  "extensionType": "ListViewCommandSet",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "items": {
+    "GEEK_UPLOAD": {
+      "title": {
+        "default": "Upload with GEEK"
+      },
+      "type": "command"
+    }
+  }
+}

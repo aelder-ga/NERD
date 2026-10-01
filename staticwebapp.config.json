@@ -23,6 +23,19 @@
       "headers": {
         "Cache-Control": "no-store"
       }
+    },
+    {
+      "route": "/sharepoint/*",
+      "headers": {
+        "Access-Control-Allow-Origin": "https://rocktwpnet.sharepoint.com"
+      }
+    },
+    {
+      "route": "/downloads/*.sppkg",
+      "headers": {
+        "Content-Type": "application/octet-stream",
+        "Content-Disposition": "attachment; filename=\"geek-launcher.sppkg\""
+      }
     }
   ]
 }

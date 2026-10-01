@@ -1789,8 +1789,9 @@ async function resolveDesiredContentType() {
         (intakeMode && normalizeName(documentType.label) === "reference" && /\.xlsx$/i.test(currentDriveItem.name)
             ? "DORK Reference Sheet" : contentTypeMap[normalizeName(documentType.label)]);
 
-    // Leave the existing content type when no mapping exists.
-    if (!desiredName) return null;
+    // Uploaded visuals and other non-template types belong to the general
+    // DORK content type, never whichever template happened to be the default.
+    if (!desiredName && !intakeMode) return null;
 
     const contentTypes = await graphGetAll(
         `${GRAPH_ROOT}/sites/${encodeURIComponent(dorkSite.id)}` +
@@ -1801,12 +1802,12 @@ async function resolveDesiredContentType() {
     const found = contentTypes.find(
         (contentType) =>
             normalizeName(contentType.name) ===
-            normalizeName(desiredName)
-    );
+            normalizeName(desiredName || `DORK ${documentType.label}`)
+    ) || (!desiredName && intakeMode ? contentTypes.find(type => normalizeName(type.name) === "dorkdocument") : null);
 
     if (!found) {
         throw new Error(
-            `The SharePoint content type "${desiredName}" is not available in the DORK Documents library.`
+            `The SharePoint content type "${desiredName || "DORK Document"}" is not available in the DORK Documents library.`
         );
     }
 
@@ -2339,11 +2340,11 @@ async function initializeIntake() {
     document.getElementById("intake-refresh").onclick = () => refreshIntakeFiles().catch(error => setSaveStatus(getErrorMessage(error), "error"));
     document.getElementById("intake-search").oninput = renderIntakeFiles;
     document.getElementById("intake-unassigned").onchange = renderIntakeFiles;
-    document.getElementById("intake-upload-input").onchange = event => uploadIntakeFiles(event.target.files);
+    document.getElementById("intake-upload-input").onchange = event => uploadIntakeFiles(event.target.files).catch(error => setSaveStatus(getErrorMessage(error), "error"));
     const drop = document.getElementById("intake-drop");
     drop.ondragover = event => { event.preventDefault(); drop.classList.add("drag-over"); };
     drop.ondragleave = () => drop.classList.remove("drag-over");
-    drop.ondrop = event => { event.preventDefault(); drop.classList.remove("drag-over"); uploadIntakeFiles(event.dataTransfer.files); };
+    drop.ondrop = event => { event.preventDefault(); drop.classList.remove("drag-over"); uploadIntakeFiles(event.dataTransfer.files).catch(error => setSaveStatus(getErrorMessage(error), "error")); };
     document.getElementById("metadata-form").hidden = false;
     setChoiceValue("lifecycle", "Draft");
     document.getElementById("save-metadata").disabled = true;
@@ -2376,6 +2377,7 @@ function renderIntakeFiles() {
 }
 async function selectIntakeFile(item) {
     if (isSaving || connecting || intakeUploading) return;
+    const latestDraft = !currentDriveItem ? captureIntakeDefaults() : null;
     connecting = true;
     currentDriveItem = null;
     currentListItem = null;
@@ -2389,7 +2391,10 @@ async function selectIntakeFile(item) {
         currentListItem = await getCurrentListItem(driveItem);
         currentDocumentFields = currentListItem.fields || {};
         await hydrateAllControls();
-        if (intakeDefaults && intakeUploadedIds.has(driveItem.id) && !getFieldValue("DORK ID")) await applyIntakeDefaults();
+        if (intakeUploadedIds.has(driveItem.id) && !getFieldValue("DORK ID")) {
+            const defaults = latestDraft || intakeDefaults;
+            if (defaults) await applyIntakeDefaults(defaults, Boolean(latestDraft));
+        }
         document.getElementById("intake-selected").textContent = driveItem.name;
         document.getElementById("metadata-form").hidden = false;
         enableSave();
@@ -2407,10 +2412,10 @@ async function assertIntakeFileClosed() {
 
 function captureIntakeDefaults() {
     const values = Object.fromEntries(["domain", "function", "document-type", "classification", "lifecycle", "information-source", "last-reviewed", "next-review"].map(id => [id, document.getElementById(id).value]));
-    return { values, pickers: Object.fromEntries(Object.entries(pickerSelections).map(([key, value]) => [key, value.map(item => ({...item}))])), people: Object.fromEntries(Object.entries(personSelections).map(([key, value]) => [key, value ? {...value} : null])) };
+    return { title: document.getElementById("title").value.trim(), values, pickers: Object.fromEntries(Object.entries(pickerSelections).map(([key, value]) => [key, value.map(item => ({...item}))])), people: Object.fromEntries(Object.entries(personSelections).map(([key, value]) => [key, value ? {...value} : null])) };
 }
-async function applyIntakeDefaults() {
-    const defaults = intakeDefaults;
+async function applyIntakeDefaults(defaults = intakeDefaults, preserveTitle = false) {
+    if (preserveTitle && defaults.title) document.getElementById("title").value = defaults.title;
     document.getElementById("domain").value = defaults.values.domain;
     await updateFunctions();
     for (const [id, value] of Object.entries(defaults.values)) document.getElementById(id).value = value;
@@ -2425,6 +2430,7 @@ async function uploadIntakeFiles(files) {
     intakeUploading = true;
     document.getElementById("save-metadata").disabled = true;
     document.getElementById("intake-upload-input").disabled = true;
+    let singleUploadedItem = null;
     const status = document.getElementById("intake-upload-status");
     status.replaceChildren();
     try {
@@ -2439,6 +2445,7 @@ async function uploadIntakeFiles(files) {
                     putChunk: (url, body, headers) => fetch(url, {method:"PUT", body, headers}),
                 });
                 intakeUploadedIds.add(uploaded.id);
+                if (queue.length === 1) singleUploadedItem = uploaded;
                 row.textContent = `${file.name}: uploaded, unnumbered. Select it below to review and save metadata.`;
             } catch (error) { row.textContent = `${file.name}: ${getErrorMessage(error)}`; }
         }
@@ -2449,5 +2456,9 @@ async function uploadIntakeFiles(files) {
         document.getElementById("intake-upload-input").disabled = false;
         document.getElementById("save-metadata").disabled = !currentDriveItem;
         document.getElementById("intake-upload-input").value = "";
+    }
+    if (singleUploadedItem) {
+        const driveItem = await getDriveItemById(singleUploadedItem.id);
+        if (driveItem.sharepointIds?.listItemId) await selectIntakeFile({id: driveItem.sharepointIds.listItemId});
     }
 }
