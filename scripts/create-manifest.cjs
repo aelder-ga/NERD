@@ -10,7 +10,7 @@ xml = xml.replaceAll('https://localhost:3000', origin.origin)
   .replace('https://www.contoso.com/help', 'https://rocktwpnet.sharepoint.com/sites/DORK')
   .replace('https://www.contoso.com', origin.origin)
   .replace('<ProviderName>Contoso</ProviderName>', '<ProviderName>Rockaway Township School District</ProviderName>')
-  .replace('<Version>1.0.0.0</Version>', '<Version>1.0.1.0</Version>')
+  .replace('<Version>1.0.0.0</Version>', '<Version>1.0.2.0</Version>')
   .replace('A template to get started.', 'Edit and verify DORK document metadata.')
   .replace('Get started with your sample add-in!', 'Get started with NERD')
   .replace('Commands Group', 'DORK')
@@ -18,6 +18,7 @@ xml = xml.replaceAll('https://localhost:3000', origin.origin)
   .replace('Your sample add-in loaded successfully.', 'NERD loaded successfully.')
   .replace('Click to Show a Taskpane', 'Open the NERD metadata pane');
 fs.writeFileSync(path.join(root, 'manifest-azure.xml'), xml);
+if (fs.existsSync(path.join(root, 'dist'))) fs.writeFileSync(path.join(root, 'dist', 'manifest-azure.xml'), xml);
 console.log('Created manifest-azure.xml');
 console.log('Add SPA redirect URI: brk-multihub://' + origin.host);
 console.log('Add SPA redirect URI: ' + origin.origin + '/taskpane.html');

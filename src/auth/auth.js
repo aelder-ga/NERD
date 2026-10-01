@@ -93,13 +93,13 @@ Office.onReady(async () => {
                 }
             }
             sessionStorage.removeItem(key);
-            document.getElementById("status").textContent = "Signed in. Returning to Word…";
+            document.getElementById("status").textContent = "Signed in. Returning to Office…";
             Office.context.ui.messageParent(JSON.stringify({nonce: saved.nonce, tokens: saved.tokens}), {targetOrigin: window.location.origin});
             return;
         }
         const resource = params.get("resource");
         const nonce = params.get("nonce");
-        if (!nonce || !Object.hasOwn(resourceScopes, resource)) throw new Error("Open sign-in from the NERD pane in Word.");
+        if (!nonce || !Object.hasOwn(resourceScopes, resource)) throw new Error("Open sign-in from the NERD pane in Word or Excel.");
         saved = {nonce, tokens: {}, started: Date.now(), loginHint: params.get("login_hint") || ""};
         await authorize(saved, resource, true);
     } catch (error) {

@@ -1,6 +1,6 @@
 import { createNestablePublicClientApplication } from "@azure/msal-browser";
 import { configureAutoOpen } from "./auto-open";
-import { syncDocumentMetadata } from "./document-metadata";
+import { assertSupportedHost, syncHostMetadata, saveHostDocument } from "./office-host";
 import { rememberDocumentLocation, resolveDocumentLocation } from "./document-location";
 
 /* global document, Office */
@@ -679,6 +679,7 @@ function requireColumn(name) {
 /* CURRENT DOCUMENT */
 
 async function initializeCurrentDocument() {
+    assertSupportedHost();
     currentDocumentUrl = await getCurrentDocumentUrl();
 
     if (!currentDocumentUrl) {
@@ -716,7 +717,7 @@ function getCurrentDocumentUrl() {
                 reject(
                     new Error(
                         result.error?.message ||
-                        "Word could not determine the current document location."
+                        "Office could not determine the current document location."
                     )
                 );
                 return;
@@ -846,10 +847,11 @@ async function refreshDocumentMetadata() {
     const documentId = idColumn && currentDocumentFields?.[idColumn.name];
     if (documentId) values.DORK_DocumentId = `${documentId} `;
     try {
-        await syncDocumentMetadata(values);
+        await syncHostMetadata(values);
         return true;
     } catch (error) {
         console.warn("NERD document field refresh failed:", getErrorMessage(error));
+        if (Office.context.host === Office.HostType.Excel) throw error;
         return false;
     }
 }
@@ -1634,14 +1636,11 @@ async function saveMetadata() {
         setSaveStatus("Verifying SharePoint...", "working");
         await verifySavedMetadata(contentType, currentDriveItem.name);
         const pageUpdated = await refreshDocumentMetadata();
-        if (!pageUpdated) throw new Error("Metadata saved, but Word fields could not update. Filename unchanged; reopen in Editing mode and retry.");
-        setSaveStatus("Saving Word document...", "working");
-        await Word.run(async context => {
-            context.document.save();
-            await context.sync();
-        });
+        if (!pageUpdated) throw new Error("Metadata saved, but document fields could not update. Filename unchanged; reopen in Editing mode and retry.");
+        setSaveStatus("Saving document...", "working");
+        await saveHostDocument();
 
-        // Finish all Word edits before changing the path underneath its open session.
+        // Finish all document edits before changing the path underneath its open session.
         // No content-control writes or document saves may follow this rename.
         if (desiredFilename !== currentDriveItem.name) {
             setSaveStatus("Renaming document...", "working");

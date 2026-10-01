@@ -20,7 +20,7 @@ export async function configureAutoOpen() {
             if (result.status === Office.AsyncResultStatus.Failed) {
                 if (previous === undefined) settings.remove(AUTO_OPEN_KEY);
                 else settings.set(AUTO_OPEN_KEY, previous);
-                reject(new Error("Word could not save automatic opening. Check document editing permissions and try again."));
+                reject(new Error("Office could not save automatic opening. Check document editing permissions and try again."));
             } else resolve();
         });
     });
