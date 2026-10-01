@@ -1,6 +1,7 @@
 import { createNestablePublicClientApplication } from "@azure/msal-browser";
 import { configureAutoOpen } from "./auto-open";
 import { syncDocumentMetadata } from "./document-metadata";
+import { rememberDocumentLocation, resolveDocumentLocation } from "./document-location";
 
 /* global document, Office */
 
@@ -273,11 +274,13 @@ async function graphRequest(url, options = {}) {
     }
 
     if (!response.ok) {
-        throw new Error(
+        const error = new Error(
             `Microsoft Graph returned ${response.status}: ${
                 typeof body === "string" ? body : JSON.stringify(body)
             }`
         );
+        error.status = response.status;
+        throw error;
     }
 
     return body;
@@ -687,7 +690,14 @@ async function initializeCurrentDocument() {
     const relativePath =
         getDorkLibraryRelativePath(currentDocumentUrl);
 
-    currentDriveItem = await getDriveItemByPath(relativePath);
+    currentDriveItem = await resolveDocumentLocation({
+        storage: window.sessionStorage,
+        siteId: dorkSite.id,
+        libraryId: dorkDocumentsLibrary.id,
+        url: currentDocumentUrl,
+        getByPath: () => getDriveItemByPath(relativePath),
+        getById: getDriveItemById,
+    });
     currentListItem = await getCurrentListItem(currentDriveItem);
     currentDocumentFields = currentListItem.fields || {};
 
@@ -1634,6 +1644,7 @@ async function saveMetadata() {
 
         setSaveStatus("Verifying SharePoint...", "working");
         await verifySavedMetadata(contentType, desiredFilename);
+        rememberDocumentLocation(window.sessionStorage, dorkSite.id, dorkDocumentsLibrary.id, currentDocumentUrl, currentDriveItem);
 
         if (documentId && String(getFieldValue("DORK ID") || "") !== documentId) throw new Error("SharePoint did not verify: DORK ID.");
         let registryUpdated = true;
