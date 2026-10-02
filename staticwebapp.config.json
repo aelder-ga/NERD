@@ -31,6 +31,13 @@
       }
     },
     {
+      "route": "/downloads/dork-dashboard.sppkg",
+      "headers": {
+        "Content-Type": "application/octet-stream",
+        "Content-Disposition": "attachment; filename=\"dork-dashboard.sppkg\""
+      }
+    },
+    {
       "route": "/downloads/*.sppkg",
       "headers": {
         "Content-Type": "application/octet-stream",
