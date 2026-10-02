@@ -23,7 +23,7 @@ class TermManager {
   const sets = await this.all(`${this.base}/groups/${encodeURIComponent(matches[0].id)}/sets`);
   for (const [kind, name] of Object.entries(SET_NAMES)) {
    const found = sets.filter(set => (set.localizedNames || []).some(item => setKey(item.name) === setKey(name)) || setKey(set.displayName) === setKey(name));
-   if (found.length !== 1) throw Error(`A unique ${name} term set was not found.`);
+   if (found.length !== 1) throw Error(`A unique ${name} term set was not found. Available sets: ${sets.map(set => set.localizedNames?.[0]?.name || set.displayName || "(unnamed)").join(", ")}.`);
    this.sets[kind] = found[0].id;
   }
  }

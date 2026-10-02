@@ -20,7 +20,7 @@ module.exports = {
     new HtmlWebpackPlugin({ filename:'geek.html', template:'./src/taskpane/intake.html', chunks:['polyfill','taskpane'] }),
     new HtmlWebpackPlugin({ filename:'index.html', template:'./src/taskpane/taskpane.html', chunks:['polyfill','taskpane'] }),
     new HtmlWebpackPlugin({ filename:'sso-redirect.html', template:'./src/auth/sso-redirect.html', chunks:['sso-redirect'] }),
-    new HtmlWebpackPlugin({ filename:'terms.html', template:'./src/terms/manage.html', chunks:['polyfill','terms'] }),
+    new HtmlWebpackPlugin({ filename:'terms.html', hash:true, template:'./src/terms/manage.html', chunks:['polyfill','terms'] }),
     new HtmlWebpackPlugin({ filename:'auth.html', template:'./src/auth/auth.html', chunks:['auth'] }),
     new HtmlWebpackPlugin({ filename:'commands.html', template:'./src/commands/commands.html', chunks:['polyfill','commands'] }),
     new CopyWebpackPlugin({ patterns:[
