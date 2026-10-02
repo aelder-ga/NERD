@@ -1,0 +1,26 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "dork-dashboard-client-side-solution",
+    "id": "5d67a4a1-582b-4b65-9d83-d41c176a27e9",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": false,
+    "isDomainIsolated": false,
+    "skipFeatureDeployment": false,
+    "developer": {
+      "name": "Rockaway Township School District",
+      "websiteUrl": "https://thankful-sky-0cc1b0210.6.azurestaticapps.net/",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.22.2"
+    },
+    "metadata": {
+      "shortDescription": {"default": "DORK Home dashboard"},
+      "longDescription": {"default": "Document discovery, reviews, documentation needs, calendar and charts. Uses existing SharePoint access; assets hosted in Azure."},
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    }
+  },
+  "paths": {"zippedPackage": "solution/dork-dashboard.sppkg"}
+}

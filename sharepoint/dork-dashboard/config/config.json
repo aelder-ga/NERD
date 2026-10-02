@@ -1,0 +1,14 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "dork-dashboard-web-part": {
+      "components": [{
+        "entrypoint": "./lib/webparts/dorkDashboard/DorkDashboardWebPart.js",
+        "manifest": "./src/webparts/dorkDashboard/DorkDashboardWebPart.manifest.json"
+      }]
+    }
+  },
+  "externals": {},
+  "localizedResources": {}
+}

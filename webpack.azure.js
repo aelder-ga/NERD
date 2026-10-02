@@ -24,6 +24,8 @@ module.exports = {
     new CopyWebpackPlugin({ patterns:[
       { from:'assets', to:'assets' },
       { from:'sharepoint/geek-launcher/azure', to:'sharepoint/geek-launcher' },
+      { from:'sharepoint/dork-dashboard/azure', to:'sharepoint/dork-dashboard' },
+      { from:'sharepoint/dork-dashboard/dork-dashboard.sppkg.base64', to:'downloads/dork-dashboard.sppkg', transform: content => Buffer.from(content.toString().trim(), 'base64') },
       { from:'sharepoint/geek-launcher/geek-launcher.sppkg.base64', to:'downloads/geek-launcher.sppkg', transform: content => Buffer.from(content.toString().trim(), 'base64') },
       { from:'src/taskpane/taskpane.css', to:'taskpane.css' },
       { from:'staticwebapp.config.json', to:'staticwebapp.config.json' },

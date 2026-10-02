@@ -1,0 +1,4 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/write-manifests.schema.json",
+  "cdnBasePath": "https://thankful-sky-0cc1b0210.6.azurestaticapps.net/sharepoint/dork-dashboard/"
+}

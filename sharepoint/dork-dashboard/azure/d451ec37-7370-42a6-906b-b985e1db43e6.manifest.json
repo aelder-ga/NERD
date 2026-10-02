@@ -1,0 +1,51 @@
+{
+  "id": "d451ec37-7370-42a6-906b-b985e1db43e6",
+  "alias": "DorkDashboardWebPart",
+  "componentType": "WebPart",
+  "version": "0.0.1",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": [
+    "SharePointWebPart",
+    "SharePointFullPage"
+  ],
+  "supportsFullBleed": true,
+  "preconfiguredEntries": [
+    {
+      "groupId": "1edbd9a8-0bfb-4aa2-9afd-14b8c45dd489",
+      "group": {
+        "default": "Advanced"
+      },
+      "title": {
+        "default": "DORK Dashboard"
+      },
+      "description": {
+        "default": "Documentation, reviews and team needs in one place."
+      },
+      "officeFabricIconFontName": "ViewDashboard",
+      "properties": {}
+    }
+  ],
+  "loaderConfig": {
+    "internalModuleBaseUrls": [
+      "https://thankful-sky-0cc1b0210.6.azurestaticapps.net/sharepoint/dork-dashboard/"
+    ],
+    "entryModuleId": "dork-dashboard-web-part",
+    "scriptResources": {
+      "dork-dashboard-web-part": {
+        "type": "path",
+        "path": "dork-dashboard-web-part_ebaf245e290dd5289acf.js"
+      },
+      "@microsoft/sp-webpart-base": {
+        "type": "component",
+        "id": "974a7777-0990-4136-8fa6-95d80114c2e0",
+        "version": "1.22.2"
+      },
+      "@microsoft/sp-http": {
+        "type": "component",
+        "id": "c07208f0-ea3b-4c1a-9965-ac1b825211a6",
+        "version": "1.22.2"
+      }
+    }
+  }
+}

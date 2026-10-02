@@ -1,0 +1,48 @@
+import {BaseClientSideWebPart} from '@microsoft/sp-webpart-base';
+import {SPHttpClient} from '@microsoft/sp-http';
+import {DashboardData,loadData} from './data';
+import {escapeHtml as e,todayKey,dayKey,lifecycleCounts,reviewCounts,reviewStatus,calendarEvents,isOpen,sortNeeds,lower} from './model';
+import {classify} from './classification';
+import './dashboard.css';
+export default class DorkDashboardWebPart extends BaseClientSideWebPart<Record<string,never>> {
+ private data?:DashboardData;private selected=todayKey();private month=this.selected.slice(0,7);private filter='';private filterKind='';private query='';private disposed=false;
+ public render():void{if(this.data)this.draw();else void this.refresh();}
+ private async refresh():Promise<void>{
+ this.domElement.innerHTML='<div class="dorkDash"><p role="status">Loading DORK dashboard…</p></div>';
+ this.data=await loadData(this.context.pageContext.web.absoluteUrl,async url=>{const r=await this.context.spHttpClient.get(url,SPHttpClient.configurations.v1);if(!r.ok)throw new Error(`SharePoint returned ${r.status}. Refresh or check your site access.`);return r.json();});if(!this.disposed)this.draw();
+ }
+ private link(url:string,label:string):string{return url?`<a href="${e(url)}">${e(label)}</a>`:e(label);}
+ private chart(title:string,caption:string,rows:{label:string;count:number}[],kind:string):string{
+ const max=Math.max(1,...rows.map(r=>r.count));return `<section class="card"><h3>${title}</h3><p class="hint">${caption}</p><div class="bars">${rows.map((r,i)=>`<button class="barRow color${i}" data-filter="${e(r.label)}" data-kind="${kind}" aria-pressed="${this.filter===r.label&&this.filterKind===kind}"><span>${e(r.label)}</span><span class="track"><span style="width:${r.count/max*100}%"></span></span><strong>${r.count}</strong></button>`).join('')}</div><p class="hint">Select a bar to filter the register.</p></section>`;
+ }
+ private searchResults():string{
+ if(!this.query.trim())return '<p class="hint">Try “Genesis accounts”, “phone extension”, “VM recovery” or “IEP iPad”.</p>';
+ const results=classify(this.query);return results.length?`<ul class="suggestions">${results.map(c=>`<li><strong>${e(c.domain)} → ${e(c.fn)}</strong><p>${e(c.description)}</p><small>Matches: ${e(c.matches.join(', ')||c.fn)}</small></li>`).join('')}</ul>`:'<p>No match yet. Describe the task rather than just the product name.</p>';
+ }
+ private calendar():string{
+ const data=this.data!;const events=calendarEvents(data.documents,data.needs);const start=new Date(`${this.month}-01T12:00:00Z`);const days=new Date(Date.UTC(start.getUTCFullYear(),start.getUTCMonth()+1,0)).getUTCDate();const label=start.toLocaleDateString(undefined,{month:'long',year:'numeric',timeZone:'UTC'});const agenda=events.filter(ev=>ev.date===this.selected);
+ return `<section class="card"><div class="calendarHeader"><button data-month="-1" aria-label="Previous month">‹</button><h3>${e(label)}</h3><button data-month="1" aria-label="Next month">›</button></div><p class="hint">Open needs and Active document reviews</p><div class="calendarGrid">${['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<span>${d}</span>`).join('')}${'<span></span>'.repeat(start.getUTCDay())}${Array.from({length:days},(_,i)=>{const key=`${this.month}-${String(i+1).padStart(2,'0')}`;const count=events.filter(ev=>ev.date===key).length;return `<button data-date="${key}" aria-label="${key}${count?`, ${count} events`:''}" aria-pressed="${this.selected===key}" class="${key===todayKey()?'today':''}">${i+1}${count?'<i aria-hidden="true"></i>':''}</button>`;}).join('')}</div><button class="textButton" data-today>Today</button><h4>${e(this.selected)}</h4>${data.documentError||data.needsError?'<p class="warning">Some sources could not load; events may be incomplete.</p>':''}<ul class="agenda">${agenda.map(ev=>`<li><small>${ev.kind==='review'?'Review due':'Need target date'}</small>${this.link(ev.url,ev.title)}</li>`).join('')||'<li>No scheduled items for this date.</li>'}</ul></section>`;
+ }
+ private register():string{
+ const data=this.data!;if(data.documentError)return `<p class="warning" role="alert">${e(data.documentError)}</p>`;
+ const docs=data.documents.filter(d=>!this.filter||(this.filterKind==='lifecycle'?lower(d.lifecycle||'Missing lifecycle')===lower(this.filter):reviewStatus(d,todayKey())===this.filter));
+ return `<div class="registerHeader"><h3>Document Register <small>${docs.length} documents</small></h3>${this.filter?`<button data-clear>Clear ${e(this.filter)} filter</button>`:''}${this.link(data.documentsUrl,'Open library')}</div><p class="hint">Copy a URL to insert a hyperlink in another document. Links are internal; recipients still need access. Copy a fresh link after a rename or move.</p><div class="tableScroll"><table><thead><tr><th>Document</th><th>Domain / Function</th><th>Type / Owner</th><th>Lifecycle / Review</th><th>Document link</th></tr></thead><tbody>${docs.map(d=>`<tr><td><small>${e(d.id)}</small>${this.link(d.url,d.title)}</td><td>${e(d.domain)}<small>${e(d.fn)}</small></td><td>${e(d.type)}<small>${e(d.owner)}</small></td><td>${e(d.lifecycle)}<small>${e(dayKey(d.review)||'No review date')}</small></td><td>${d.url?`<input readonly aria-label="Link for ${e(d.id)}" value="${e(d.url)}"><button data-copy>Copy link</button>`:'Link unavailable'}</td></tr>`).join('')||'<tr><td colspan="5">No documents match this view.</td></tr>'}</tbody></table></div><p class="copyStatus" role="status" aria-live="polite"></p>`;
+ }
+ private draw():void{
+ const data=this.data!;const active=data.documents.filter(d=>lower(d.lifecycle)==='active').length;const needs=sortNeeds(data.needs.filter(isOpen));
+ this.domElement.innerHTML=`<div class="dorkDash"><header><div><span class="eyebrow">DOCUMENTATION ORGANIZATION & REFERENCE KEY</span><h2>DORK at a glance</h2><p>Find the right home. Keep the knowledge current.</p></div><button data-refresh>Refresh data</button></header><p class="hint">Updated ${e(data.loadedAt.toLocaleTimeString())} · Counts include numbered documents you can access.</p><div class="dashboardGrid"><div class="mainColumn"><div class="charts">${data.documentError?`<section class="card warning" role="alert">Charts unavailable: ${e(data.documentError)}</section>`:this.chart('Documents by lifecycle','All numbered documents',lifecycleCounts(data.documents),'lifecycle')+this.chart('Review health',`${active} Active documents · Approaching = due today or within 30 days. Other lifecycles excluded.`,reviewCounts(data.documents,todayKey()),'review')}</div><section class="card"><div class="registerHeader"><h3>Open Documentation Needs <small>${data.needsError?'Unavailable':needs.length}</small></h3>${this.link(data.needsUrl,'All needs')}${this.link(data.newNeedUrl,'Add a need')}</div><p class="hint">New = awaiting team discussion. Planned = agreed work.</p>${data.needsError?`<p class="warning" role="alert">${e(data.needsError)}</p>`:`<ul class="needs">${needs.slice(0,8).map(n=>`<li>${this.link(n.url,n.title)}<small>${e(n.priority)} · ${e(n.status)} · ${e(n.assigned||'Unassigned')} · ${e(dayKey(n.target)||'No target date')}</small></li>`).join('')||'<li>No open needs.</li>'}</ul>${needs.length>8?'<p class="hint">First 8 by priority and date. Open All needs for the full list.</p>':''}`}</section></div><aside><section class="card"><span class="eyebrow">TLDR CLASSIFICATION FINDER</span><h3>Where does it belong?</h3><label>Describe the topic or task<input type="search" data-search value="${e(this.query)}" placeholder="Genesis accounts"></label><div data-results>${this.searchResults()}</div><p class="hint">Suggestions, not automatic decisions. Choose by purpose. Add product names under System / Platform separately.</p></section>${this.calendar()}</aside></div><section class="card register">${this.register()}</section></div>`;this.bind();
+ }
+ private bind():void{
+ const root=this.domElement;root.querySelector<HTMLButtonElement>('[data-refresh]')!.onclick=()=>{void this.refresh();};
+ root.querySelector<HTMLInputElement>('[data-search]')!.oninput=ev=>{this.query=(ev.target as HTMLInputElement).value;root.querySelector('[data-results]')!.innerHTML=this.searchResults();};
+ root.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach(b=>b.onclick=()=>{this.filter=b.dataset.filter!;this.filterKind=b.dataset.kind!;this.draw();});
+ root.querySelector<HTMLButtonElement>('[data-clear]')?.addEventListener('click',()=>{this.filter='';this.draw();});
+ root.querySelectorAll<HTMLButtonElement>('[data-date]').forEach(b=>b.onclick=()=>{this.selected=b.dataset.date!;this.draw();});
+ root.querySelectorAll<HTMLButtonElement>('[data-month]').forEach(b=>b.onclick=()=>{const d=new Date(`${this.month}-01T12:00:00Z`);d.setUTCMonth(d.getUTCMonth()+Number(b.dataset.month));this.month=d.toISOString().slice(0,7);this.selected=`${this.month}-01`;this.draw();});
+ root.querySelector<HTMLButtonElement>('[data-today]')!.onclick=()=>{this.selected=todayKey();this.month=this.selected.slice(0,7);this.draw();};
+ root.querySelectorAll<HTMLInputElement>('input[readonly]').forEach(input=>input.onfocus=()=>input.select());
+ root.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach(b=>b.onclick=()=>{void this.copy(b);});
+ }
+ private async copy(button:HTMLButtonElement):Promise<void>{const input=button.parentElement!.querySelector<HTMLInputElement>('input')!;input.focus();input.select();const status=this.domElement.querySelector<HTMLElement>('.copyStatus')!;try{await navigator.clipboard.writeText(input.value);status.textContent='Document link copied.';}catch{status.textContent='Link selected. Press Ctrl+C (or Command+C) to copy.';}}
+ protected onDispose():void{this.disposed=true;this.domElement.innerHTML='';}
+}
