@@ -37,4 +37,6 @@ Edit Home, add the **DORK Dashboard** web part in a wide one-column section and 
 
 Nine local tests cover date boundaries, missing dates, unexpected lifecycle values, term search, encoded filenames, pagination, loading failures, REST mapping and component interactions. Root NERD/GEEK regression tests also run unchanged. Production build and package generation pass.
 
-Live SharePoint installation, layout, counts, current-user security trimming, clipboard permission behavior and phone layout must be verified after installation. Do not mark this live acceptance complete based only on the local fixtures.
+Installed and enabled on DORK on 2026-10-02. Home remains a saved draft. Live checks verified four Draft documents, five open Needs, taxonomy labels, people names, classification search, chart filtering, calendar date selection and clipboard copy (including an ampersand in the filename). Duplicate native dashboard sections were removed from the draft.
+
+Review health has no live Active documents yet; its date boundaries and missing-date handling are covered by local tests. Access is inherited from the current user’s SharePoint requests; comparison with a lower-access account and an actual phone remain acceptance checks. Responsive layout uses the dashboard container width as well as viewport media queries so narrow SharePoint columns can stack safely.
