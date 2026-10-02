@@ -49,6 +49,12 @@ module.exports = async function (context, req) {
     const root = `${GRAPH}/sites/${encodeURIComponent(site)}/lists/${registry}/items`;
     const headers = { Authorization: `Bearer ${token.access_token}`, 'Content-Type': 'application/json' };
     const store = {
+      async findFramework() {
+        const query = new URLSearchParams({ '$expand': 'fields', '$filter': "fields/DorkID eq 'DORK-0001'", '$top': '2' });
+        const result = await request(`${root}?${query}`, { headers });
+        if (!Array.isArray(result?.value) || result.value.length !== 1) throw problem(409, 'The Framework registry binding must be restored before allocating numbers.');
+        return result.value[0];
+      },
       async find(value) {
         const query = new URLSearchParams({ '$expand': 'fields', '$filter': `fields/DocumentKey eq '${value}'`, '$top': '2' });
         const result = await request(`${root}?${query}`, { headers });

@@ -5,6 +5,7 @@ const { identifier, documentKey, reserve } = require('../api/numbering/allocator
 function storage() {
  const rows = new Map(); let sequence = 0;
  return { rows,
+ async findFramework() { return structuredClone([...rows.values()].find(row => row.fields.DorkID === 'DORK-0001') || null); },
  async find(key) { return rows.has(key) ? structuredClone(rows.get(key)) : null; },
  async create(fields) { if (rows.has(fields.DocumentKey)) throw Error('Unique constraint'); const row = { id: String(++sequence), fields: structuredClone(fields) }; rows.set(fields.DocumentKey, row); return structuredClone(row); },
  async patch(row, fields) { Object.assign(rows.get(row.fields.DocumentKey).fields, fields); } };
@@ -48,4 +49,30 @@ test('read-only caller cannot reach application credential exchange', async () =
  global.fetch = async url => { calls++; assert.match(url, /EffectiveBasePermissions$/); return { ok: true, json: async () => ({ Low: '1', High: '0' }) }; };
  try { const ctx = {}; await handler(ctx, { headers: { 'x-nerd-sharepoint-authorization': 'Bearer test' }, body: { itemId: 14, action: 'reserve' } }); assert.equal(ctx.res.status, 403); assert.equal(calls, 1); }
  finally { global.fetch = oldFetch; for (const key of Object.keys(process.env)) if (!(key in saved)) delete process.env[key]; Object.assign(process.env, saved); }
+});
+
+test('late Framework binding consumes no ordinary number; retries preserve all assigned IDs', async () => {
+ const store = storage();
+ for (const [key, expected] of [['a', 'DORK-0002'], ['b', 'DORK-0003'], ['c', 'DORK-0004']]) {
+  assert.equal((await reserve(store, key, '/'+key, 1)).fields.DorkID, expected);
+ }
+ const framework = await store.create({ DocumentKey: 'framework', DorkID: 'DORK-0001' });
+ assert.equal(framework.id, '4');
+ const rows = await Promise.all(Array.from({length: 8}, () => reserve(store, 'next', '/next', 1)));
+ assert.ok(rows.every(row => row.fields.DorkID === 'DORK-0005'));
+ assert.equal((await reserve(store, 'later', '/later', 1)).fields.DorkID, 'DORK-0006');
+ for (const [key, expected] of [['a', 'DORK-0002'], ['b', 'DORK-0003'], ['c', 'DORK-0004'], ['framework', 'DORK-0001'], ['next', 'DORK-0005']]) {
+  assert.equal((await reserve(store, key, '/renamed', 1)).fields.DorkID, expected);
+ }
+});
+test('already assigned original mapping after Framework remains permanent', async () => {
+ const store = storage();
+ await store.create({DocumentKey: 'framework', DorkID: 'DORK-0001'});
+ await store.create({DocumentKey: 'old', DorkID: 'DORK-0003'});
+ assert.equal((await reserve(store, 'old', '/old', 1)).fields.DorkID, 'DORK-0003');
+});
+test('Framework lookup failure creates no reservation', async () => {
+ const store = storage(); store.findFramework = async () => { throw Error('Unavailable'); };
+ await assert.rejects(reserve(store, 'new', '/new', 1), /Unavailable/);
+ assert.equal(store.rows.size, 0);
 });

@@ -13,6 +13,13 @@ function identifier(itemId, offset) {
 }
 // Storage supplies atomic unique DocumentKey / DorkID constraints. No in-memory counter.
 async function reserve(store, key, location, offset) {
+  // The explicitly bound Framework occupies a registry row but not an ordinary
+  // sequence number. Resolve its boundary before creating any reservation.
+  const framework = await store.findFramework();
+  const boundary = framework ? Number(framework.id) : null;
+  if (framework && (!Number.isSafeInteger(boundary) || boundary < 1 || framework.fields.DorkID !== 'DORK-0001')) {
+    throw new Error('Invalid Framework registry boundary.');
+  }
   let row = await store.find(key);
   if (!row) {
     try { row = await store.create({ Title: key, DocumentKey: key, AllocationState: 'Reserved', CurrentLocation: location }); }
@@ -23,10 +30,12 @@ async function reserve(store, key, location, offset) {
     }
   }
   if (row.fields.DocumentKey !== key) throw new Error('Registry identity mismatch.');
-  const expected = identifier(row.id, offset);
+  const original = identifier(row.id, offset);
+  const expected = boundary !== null && Number(row.id) > boundary
+    ? identifier(Number(row.id) - 1, offset) : original;
   // 0001 can only be explicitly provisioned by an administrator.
   if (row.fields.DorkID === 'DORK-0001') return row;
-  if (row.fields.DorkID && row.fields.DorkID !== expected) throw new Error('Registry sequence mismatch; administrator recovery required.');
+  if (row.fields.DorkID && row.fields.DorkID !== expected && row.fields.DorkID !== original) throw new Error('Registry sequence mismatch; administrator recovery required.');
   if (!row.fields.DorkID) {
     try { await store.patch(row, { DorkID: expected }); }
     catch (error) {
