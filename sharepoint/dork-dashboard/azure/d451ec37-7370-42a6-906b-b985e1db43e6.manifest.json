@@ -34,7 +34,7 @@
     "scriptResources": {
       "dork-dashboard-web-part": {
         "type": "path",
-        "path": "dork-dashboard-web-part_9370f41ae2cb22558f5d.js"
+        "path": "dork-dashboard-web-part_288801dcdfcd56eec5b7.js"
       },
       "@microsoft/sp-webpart-base": {
         "type": "component",

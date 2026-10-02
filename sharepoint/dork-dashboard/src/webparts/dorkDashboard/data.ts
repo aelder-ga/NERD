@@ -49,7 +49,7 @@ export async function loadData(site: string, read: ReadJson): Promise<DashboardD
           return text(found?.Term) || (/^\d+$/.test(fallback) ? '' : fallback);
         };
         const owner = map.owner;
-        const rows = await allRows(`${base}/items?$select=*,FileRef,FileLeafRef,FSObjType,FieldValuesAsText,${owner}/Title&$expand=FieldValuesAsText,${owner}&$top=500`, read, site);
+        const rows = await allRows(`${base}/items?$select=*,FileRef,FileLeafRef,FSObjType,${owner}/Title&$expand=${owner}&$top=500`, read, site);
         result.documents = rows.filter(row => row.FSObjType !== 1 && text(row[map['dork id']]).trim()).map(row => {
           const display = row.FieldValuesAsText || {};
           const get = (title: string): string => text(display[map[title]]) || term(row[map[title]]);
@@ -73,7 +73,7 @@ export async function loadData(site: string, read: ReadJson): Promise<DashboardD
         const missing = ['details', 'need type', 'priority', 'status', 'assigned to', 'target date'].filter(name => !map[name]);
         if (missing.length) throw new Error(`Needs columns missing: ${missing.join(', ')}.`);
         const assigned = map['assigned to'];
-        const rows = await allRows(`${base}/items?$select=*,FieldValuesAsText,${assigned}/Title&$expand=FieldValuesAsText,${assigned}&$top=500`, read, site);
+        const rows = await allRows(`${base}/items?$select=*,${assigned}/Title&$expand=${assigned}&$top=500`, read, site);
         result.needs = rows.map(row => ({ id: Number(row.Id), title: text(row.Title), details: text(row[map.details]),
           url: displayUrl ? `${displayUrl}${displayUrl.includes('?') ? '&' : '?'}ID=${Number(row.Id)}` : '', kind: text(row[map['need type']]),
           priority: text(row[map.priority]), status: text(row[map.status]), assigned: text(row[assigned]?.Title) || text(row.FieldValuesAsText?.[assigned]),

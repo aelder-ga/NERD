@@ -23,10 +23,11 @@ test('dashboard interactions filter register, classify, select calendar day and 
 });
 test('data loader discovers columns, ignores unnumbered uploads and preserves dates and encoded paths',async()=>{
  const site='https://example.sharepoint.com/sites/DORK';const cols=['DORK ID','Domain','Function','Document Type','Owner','Lifecycle','Next Review','Details','Need Type','Priority','Status','Assigned To','Target Date'];const read=async url=>{
+ assert.ok(!url.includes('expand=FieldValuesAsText,'),'Do not combine formatted-field and user expansions: SharePoint rejects it');
  if(url.includes('TaxonomyHiddenList'))return {value:[{Id:15,Term:'NETWORK'},{Id:31,Term:'NETWORK:Voice'},{Id:3,Term:'Procedure'}]};
  if(url.includes('/fields?'))return {value:cols.map((Title,i)=>({Title,InternalName:'F'+i}))};
  if(url.includes('/lists?'))return {value:[{Id:'42841641-0241-4e53-99f3-2ecb68ed1d9e',Title:'Documentation Needs',DefaultViewUrl:'/sites/DORK/Lists/Needs',DefaultNewFormUrl:'/sites/DORK/Lists/Needs/NewForm.aspx',DefaultDisplayFormUrl:'/sites/DORK/Lists/Needs/DispForm.aspx'}]};
- if(url.includes("dd8ac8ef"))return {value:[{Id:1,FSObjType:0,F0:'DORK-0001',Title:'A',FileRef:'/sites/DORK/Shared Documents/A #1.docx',F4:{Title:'Owner'},F5:'Active',F6:'2026-10-23T00:00:00Z',FieldValuesAsText:{F1:'15',F2:'31',F3:'3',F4:'6'}},{Id:2,FSObjType:0,Title:'Not numbered'}]};
+ if(url.includes("dd8ac8ef"))return {value:[{Id:1,FSObjType:0,F0:'DORK-0001',Title:'A',FileRef:'/sites/DORK/Shared Documents/A #1.docx',F1:{Label:'15',WssId:15},F2:{Label:'31',WssId:31},F3:{Label:'3',WssId:3},F4:{Title:'Owner'},F5:'Active',F6:'2026-10-23T00:00:00Z',FieldValuesAsText:{F1:'15',F2:'31',F3:'3',F4:'6'}},{Id:2,FSObjType:0,Title:'Not numbered'}]};
  return {value:[{Id:1,Title:'Need',F7:'Details',F8:'Procedure',F9:'High',F10:'New',F12:'2026-10-23T00:00:00Z',F11:{Title:'Tech'},FieldValuesAsText:{F11:'4'},F11Id:4}]};
  };
  const data=await loadData(site,read);assert.equal(data.documentError,'');assert.equal(data.needsError,'');assert.equal(data.documents.length,1);assert.equal(data.documents[0].fn,'Voice');assert.equal(data.documents[0].domain,'NETWORK');assert.equal(data.documents[0].owner,'Owner');assert.match(data.documents[0].url,/%231.docx$/);assert.equal(data.documents[0].review,'2026-10-23T00:00:00Z');assert.equal(data.needs[0].assigned,'Tech');assert.match(data.needs[0].url,/ID=1$/);
