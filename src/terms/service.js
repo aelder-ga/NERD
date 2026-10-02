@@ -1,5 +1,6 @@
 const SET_NAMES = { collection: 'Collection', system: 'System / Platform' };
 const normalized = value => String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-US');
+const setKey = value => normalized(value).replace(/[^a-z0-9]/g, '');
 const label = term => term.labels?.find(item => item.isDefault)?.name || term.labels?.[0]?.name || '';
 const description = term => term.descriptions?.find(item => item.languageTag?.toLowerCase() === 'en-us')?.description || term.descriptions?.[0]?.description || '';
 class TermManager {
@@ -21,7 +22,7 @@ class TermManager {
   if (matches.length !== 1) throw Error('A unique DORK term group was not found.');
   const sets = await this.all(`${this.base}/groups/${encodeURIComponent(matches[0].id)}/sets`);
   for (const [kind, name] of Object.entries(SET_NAMES)) {
-   const found = sets.filter(set => (set.localizedNames || []).some(item => normalized(item.name) === normalized(name)) || normalized(set.displayName) === normalized(name));
+   const found = sets.filter(set => (set.localizedNames || []).some(item => setKey(item.name) === setKey(name)) || setKey(set.displayName) === setKey(name));
    if (found.length !== 1) throw Error(`A unique ${name} term set was not found.`);
    this.sets[kind] = found[0].id;
   }

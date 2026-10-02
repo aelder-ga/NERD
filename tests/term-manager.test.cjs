@@ -4,7 +4,7 @@ function setup(terms=[],post=async()=>({id:'new',labels:[{name:'New',isDefault:t
  const writes=[];const manager=new TermManager(async(url,options)=>{
   if(options){writes.push(JSON.parse(options.body));return post();}
   if(url.endsWith('/groups'))return {value:[{id:'group',displayName:'DORK'}]};
-  if(url.endsWith('/sets'))return {value:[{id:'c',localizedNames:[{name:'Collection'}]},{id:'s',localizedNames:[{name:'System / Platform'}]},{id:'domain',localizedNames:[{name:'Domain'}]}]};
+  if(url.endsWith('/sets'))return {value:[{id:'c',localizedNames:[{name:'Collection'}]},{id:'s',localizedNames:[{name:'System/Platform'}]},{id:'domain',localizedNames:[{name:'Domain'}]}]};
   if(url.includes('/terms/'))return {value:[]};return {value:terms};
  },'host,site,web');return{manager,writes};
 }
