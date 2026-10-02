@@ -2,7 +2,7 @@
   "id": "d451ec37-7370-42a6-906b-b985e1db43e6",
   "alias": "DorkDashboardWebPart",
   "componentType": "WebPart",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "manifestVersion": 2,
   "requiresCustomScript": false,
   "supportedHosts": [
@@ -34,7 +34,7 @@
     "scriptResources": {
       "dork-dashboard-web-part": {
         "type": "path",
-        "path": "dork-dashboard-web-part_ebaf245e290dd5289acf.js"
+        "path": "dork-dashboard-web-part_9370f41ae2cb22558f5d.js"
       },
       "@microsoft/sp-webpart-base": {
         "type": "component",

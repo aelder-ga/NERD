@@ -43,12 +43,19 @@ export async function loadData(site: string, read: ReadJson): Promise<DashboardD
         const required = ['dork id', 'domain', 'function', 'document type', 'owner', 'lifecycle', 'next review'];
         const missing = required.filter(name => !map[name]);
         if (missing.length) throw new Error(`Documents columns missing: ${missing.join(', ')}.`);
-        const rows = await allRows(`${base}/items?$select=*,FileRef,FileLeafRef,FSObjType,FieldValuesAsText&$expand=FieldValuesAsText&$top=500`, read, site);
+        const taxonomy = await allRows(`${site}/_api/web/lists/getbytitle('TaxonomyHiddenList')/items?$select=Id,Term,IdForTerm&$top=500`, read, site);
+        const label = (value: Row, fallback: string): string => {
+          const found = taxonomy.find(item => (value?.TermGuid && text(item.IdForTerm).toLowerCase() === text(value.TermGuid).toLowerCase()) || Number(item.Id) === Number(value?.WssId || fallback));
+          return text(found?.Term) || (/^\d+$/.test(fallback) ? '' : fallback);
+        };
+        const owner = map.owner;
+        const rows = await allRows(`${base}/items?$select=*,FileRef,FileLeafRef,FSObjType,FieldValuesAsText,${owner}/Title&$expand=FieldValuesAsText,${owner}&$top=500`, read, site);
         result.documents = rows.filter(row => row.FSObjType !== 1 && text(row[map['dork id']]).trim()).map(row => {
           const display = row.FieldValuesAsText || {};
           const get = (title: string): string => text(display[map[title]]) || term(row[map[title]]);
+          const tax = (title: string): string => label(row[map[title]], get(title));
           return { id: text(row[map['dork id']]), title: text(row.Title) || text(row.FileLeafRef), url: fileUrl(text(row.FileRef), site),
-            domain: get('domain'), fn: get('function').replace(/^[^:]+:/, ''), type: get('document type'), owner: get('owner'),
+            domain: tax('domain'), fn: tax('function').replace(/^[^:]+:/, ''), type: tax('document type'), owner: text(row[owner]?.Title) || get('owner'),
             lifecycle: get('lifecycle'), review: text(row[map['next review']]), modified: text(row.Modified) };
         }).sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
       } catch (e) { result.documentError = error(e); }
@@ -65,10 +72,11 @@ export async function loadData(site: string, read: ReadJson): Promise<DashboardD
         const map = await fields(base);
         const missing = ['details', 'need type', 'priority', 'status', 'assigned to', 'target date'].filter(name => !map[name]);
         if (missing.length) throw new Error(`Needs columns missing: ${missing.join(', ')}.`);
-        const rows = await allRows(`${base}/items?$select=*,FieldValuesAsText&$expand=FieldValuesAsText&$top=500`, read, site);
+        const assigned = map['assigned to'];
+        const rows = await allRows(`${base}/items?$select=*,FieldValuesAsText,${assigned}/Title&$expand=FieldValuesAsText,${assigned}&$top=500`, read, site);
         result.needs = rows.map(row => ({ id: Number(row.Id), title: text(row.Title), details: text(row[map.details]),
           url: displayUrl ? `${displayUrl}${displayUrl.includes('?') ? '&' : '?'}ID=${Number(row.Id)}` : '', kind: text(row[map['need type']]),
-          priority: text(row[map.priority]), status: text(row[map.status]), assigned: text(row.FieldValuesAsText?.[map['assigned to']]),
+          priority: text(row[map.priority]), status: text(row[map.status]), assigned: text(row[assigned]?.Title) || text(row.FieldValuesAsText?.[assigned]),
           assignedId: Number(row[`${map['assigned to']}Id`]) || 0, target: text(row[map['target date']]) }));
       } catch (e) { result.needsError = error(e); }
     })()
