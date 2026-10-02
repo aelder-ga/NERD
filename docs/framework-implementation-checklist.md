@@ -1,56 +1,72 @@
 # DORK Framework implementation checklist
 
-Reviewed 2026-09-30 against DORK_Framework_v0.2.docx (Library version 2, modified 2026-09-25), current NERD source, and user-reported acceptance tests.
+Reviewed 2026-10-02 against the uploaded DORK-0001 DORK Framework, the earlier framework draft, deployed source at 6435ed9f36e4b5f5800082576fa9ff52ecae6fe4, and user-confirmed tenant tests.
 
-This is a requirements audit, not certification that the tenant is fully configured. "Tested" means the specific behavior was confirmed; platform capability alone is not evidence of configuration. Governance requirements need an operating practice as well as any supporting software.
+This audit separates source implementation, user-confirmed behavior, planned features and unverified tenant configuration. It does not certify all SharePoint settings. The uploaded Framework copy is the document evidence; no direct inspection of a newer SharePoint copy was performed.
 
-## Framework coverage
+## Current Framework coverage
 
-| Framework sections | Promise | Current evidence / gap | Acceptance work |
-| --- | --- | --- | --- |
-| 1, 1.1, 20, 32 | Useful knowledge; low burden; sufficient documentation | Partial. Silent authentication, automatic pane opening and page refresh tested. Content usefulness and burden need ongoing staff review. | Assess real workflows and remove redundant entry; judge documents by their purpose. |
-| 2 | Platform-independent Framework; separate platform instructions | Framework exists; operational instructions remain planned. | Create the DORK operations reference sheet separately from the Framework. |
-| 3–5 | Classify by purpose; one Domain and controlled Function taxonomy | Domain/Function selection and persistence tested. Full taxonomy equivalence not audited term by term. | Compare all tenant terms with Framework; document controlled-change authority. |
-| 6–7 | Fourteen document types; suitable creation standards and templates | Partial. Five Word templates regenerated; Reference Sheet restored. Current content-type mapping covers six types. Word template page refresh tested on Standard. | Inventory all 14 types and choose an appropriate creation format/workflow for each; test each mapped template. Preserve authoritative Records and native Visual formats. |
-| 8–9 | Expandable Systems/Platforms and Collections; multiple or none | Multi-value saving verified. Creation/expansion governance and zero-value behavior need verification. | Test empty and multi-value cases; define who adds controlled terms. |
-| 10–12 | Optional Audience and Tags; Classification reflects sensitivity | Selection and persistence tested, including multiple tags. Audience must not imply access rights. | Verify optional-field clearing and tag expansion; verify actual Sensitive access controls separately. |
-| 13–14 | Ownership, responsibility, backup and source; appropriate required metadata | People and Source persistence tested. **Mismatch:** NERD requires Owner; Framework permits Owner OR Responsible. | Resolve policy deliberately; verify role-based ownership expectations and required fields by document type. |
-| 14.1 | Permanent document identifier | Not implemented. Templates contain an ID slot; NERD can read an existing ID. No allocator or numbering prefix. | Reserve DORK-0001 for Framework; allocate unique permanent IDs, preserve across rename/move, and settle filename prefix convention. Do not use library row IDs as permanent IDs. |
-| 14.2 | Distinguish substantive Last Updated from accuracy Last Reviewed | Review dates persist. Substantive-change tracking is not implemented; SharePoint Modified alone is insufficient evidence. | Define and implement both meanings; allow review confirmation without substantive revision. |
-| 15 | Draft default; Active, Superseded and Retired; replacement identification; historical retention | Draft default and lifecycle field implemented. Superseded By relationship and normal-navigation exclusions not implemented/verified. | Add replacement association and lifecycle views; retain historical documents and IDs. |
-| 16–17 | Contextual reviews, overdue indication and event-driven review | Dates save correctly. Due/overdue presentation and event-triggered workflow not implemented. | Keep overdue documents Active while visibly marking Overdue Review; support varying/no review intervals and earlier reviews after relevant events. |
-| 18 | Low-friction Documentation Needed backlog | Not implemented as a DORK operational feature. Repository engineering follow-ups are a different backlog. | Create a staff-facing intake with optional assignment; use in development meetings; handle urgent needs immediately. |
-| 19 | Reduce single-person knowledge risk | Operating practice not verified. | Identify high-risk knowledge and assign practical documentation work. |
-| 21, 23 | Useful relationships and stable discovery through rename/move/reclassification/archive | Title-to-filename rename tested. Stable relationship management and move/archive behavior not verified. | Add managed Related Documents and Superseded By associations; test links after rename, move and archival. |
-| 22 | Search titles, headings, content and metadata; filters; Systems searchable without duplicate tags | SharePoint search configuration and indexing not verified. Dashboard not built. | Test searches and filtered views against real documents, including system-only metadata and content matches. |
-| 24 | Two recurring departmental meetings monthly; development and maintenance agendas | Operating practice not verified. | Establish cadence covering backlog, gaps, assignments, due/overdue reviews and significant revisions. Urgent work must not wait. |
-| 25 | Staff creation; scoped assignments; significant review; Owner approves Active | No owner-approval gate demonstrated in NERD. Lifecycle selection alone does not prove approval. | Define/enforce activation approval and additional review for Sensitive/high-impact content; allow minor corrections without undue overhead. Do not treat overdue review as an employee-performance metric. |
-| 26 | IncidentIQ references authoritative DORK knowledge; recurring gaps feed backlog | Practice/integration not verified. Framework does not require a full API integration. | Establish stable ID/link references and backlog routing; avoid duplicating authoritative content into tickets. |
-| 27 | SharePoint authoritative record; appropriate metadata | Save/read-back verification and reopened persistence tested for tested fields. | Complete dimension coverage across document types, optional clearing and lifecycle transitions. |
-| 28 | Version/audit history, archival, Sensitive security, files/visuals, export/recovery, identity integration, maintainability | Azure hosting and identity flow tested. Other tenant capabilities/configurations remain unverified. | Verify versioning, audit evidence, permission boundaries, archival and a recoverable export/restore path. |
-| 29 | CTO governance/delegation; controlled taxonomy; useful requirements | Operating practice not verified. | Record authorities, delegation and change process; distinguish controlled taxonomy from expandable terms and flexible tags. |
-| 30–31 | Classification Index and TLDR Search Only Classification Reference | [Initial reference drafts](drafts/README.md) prepared 2026-09-30: all 62 Functions covered; final publication not complete. | Review draft search vocabulary and publish both references through DORK; common search terms must aid discovery without overriding purpose-based classification. |
+| Current section | Commitment | Evidence and remaining work |
+| --- | --- | --- |
+| 1 | Useful, authoritative, maintainable knowledge | SharePoint is the document store. Usefulness, ownership and maintenance remain operating practices to assess with staff. |
+| 2–3 | Six dimensions, purpose-based Domain/Function, controlled taxonomy | Selection and persistence have passed user tests. Full tenant vocabulary has not been compared term by term. Source sorts terms alphabetically, which differs from the Framework's locked Domain order. |
+| 4 | Eleven document types; suitable formats | Word templates and Reference Sheet exist; GEEK supports native files with general DORK Document fallback. Dedicated content types/templates for every type are not promised by the current text. Inventory actual term/type/template coverage. |
+| 5 | Permanent IDs on metadata save; Framework 0001; stable IDs on rename | Numbering, prefix rename and existing-ID retention implemented and user-confirmed. Framework reservation bound to registry row 4. Latest allocation-boundary repair is deployed and regression-tested; the next fresh allocation expected to be 0005 is not yet tenant-confirmed. Opening a document alone does not allocate. An allocation can remain reserved after a later save failure; retry the same file. Moves, copies, reuploads and recovery still require validation/admin reconciliation. |
+| 6 | Owner, responsibility, classification and supporting metadata | Owner and Classification validation confirmed. Metadata save/reopen confirmed for tested Word and Excel fields; platform removal persisted. Classification labels do not enforce access permissions. Optional-field clearing has automated coverage, but not every field/type has a tenant acceptance test. |
+| 7 | Draft, owner release review, review dates, supersession and history | Draft default and date persistence implemented. Owner release review is currently a human process: no authorization/approval gate demonstrated. No managed Superseded By relationship or lifecycle navigation implemented. Retention/version settings unverified. |
+| 8 | NERD Word/Excel; GEEK intake; Azure hosting and authentication | User-confirmed Word auto-open, stable saves/rename and silent sign-in; Excel embedded fields and reopened metadata; GEEK upload, ID/name/metadata verification and SharePoint launcher. All application hosting remains Azure. Excel automatic opening is not established. GEEK editing does not synchronize embedded Office fields; close Office before editing externally. |
+| 9 | Completed working records stored separately with context | Policy described, but destination, permissions and staff workflow not verified. Do not allocate a DORK ID to every completed checklist merely because its source template has one. |
+| 10 | Registry, document register, Needs list and dashboard | Numbering registry operational. Registry is not a staff-facing document register or Needs backlog. Register views, staff Needs list, dashboard, calendar and charts remain planned. |
+| 11 | Framework maintenance and structural-change governance | Operating practice not verified. Related documentation still calls 0003 planned, although the user has now populated Microsoft Administration Portals. Update that wording in the authoritative Word document. |
+
+## Source discrepancies to address
+
+- [ ] Preserve the specified Domain order instead of alphabetically sorting the Domain picker; confirm the intended order against tenant terms.
+- [ ] Check Excel Reference content-type routing. Current source special-cases Reference + .xlsx only in GEEK intake; NERD maps the plain Reference term to DORK Reference Doc, while Reference Sheet maps correctly. Confirm the actual term and content type on 0003 before treating its current result as broken.
+- [ ] Reconcile taxonomy inventories. Current Framework lists eleven types including Runbook; the older draft lists fourteen including Form, Report, Policy and Register but no Runbook. Decide the authoritative vocabulary rather than silently dropping or adding terms.
+- [ ] Compare all Domain/Function labels and relationships against the live term store, including Data Governance versus earlier Governance terminology.
+- [ ] Change the 0003 related-document entry from planned to Microsoft Administration Portals, DORK-0003. Clean up the Standard Template footer if desired.
+
+## Earlier commitments that need an explicit decision
+
+The earlier draft is preserved in [framework.md](drafts/framework.md). These commitments were not fully carried into the current uploaded Framework. Their omission is not evidence that the user approved abandoning them.
+
+| Earlier commitment | Current disposition / decision needed |
+| --- | --- |
+| Owner OR Responsible | Current Framework and NERD require Owner. Confirm this deliberate policy change; no current-text mismatch remains. |
+| Substantive Last Updated, distinct from Last Reviewed | Not implemented as a separate field/process. SharePoint Modified is not a substitute for substantive revision tracking. Decide whether to retain this requirement. |
+| Managed Related Documents and Superseded By; stable links through moves/archive | Current text describes manual relationships; managed association and move/archive acceptance remain open. |
+| Overdue review indication and event-driven reviews | Dates exist; overdue views/notifications and trigger practices remain open. |
+| Two monthly department meetings: development and review | Cadence not verified. Retain, revise or retire explicitly. |
+| Knowledge concentration assessment and staff Documentation Needed intake | Needs list is planned; risk assessment and operating practice remain open. |
+| Owner approval for Active; extra review for Sensitive/high-impact material | Current Framework has owner checking before release; enforcement and evidence remain open. |
+| IncidentIQ references and routing recurring gaps into the backlog | Not verified. This can be a staff process and does not require an API integration. |
+| Search across title, headings, content and metadata | Tenant indexing and representative searches not tested in this audit. |
+| Version/audit history, Sensitive permission boundaries, archival, export and recovery | Platform capability is insufficient evidence; configuration and recovery acceptance remain open. |
+| CTO/delegated governance and controlled taxonomy changes | Authority and change process not verified. |
+| Classification Index and TLDR searchable reference | Drafts exist; final review/publication still open. |
 
 ## Next implementation order
 
-- [ ] Resolve Owner-versus-Responsible requirement and activation approval policy.
-- [ ] Implement permanent numbering, reserving DORK-0001 for Framework. [Allocation and recovery plan](permanent-numbering.md) prepared; tenant registry/schema/permissions inspection is required before activation.
-- [ ] Finish the document-type/template inventory and remaining tenant metadata round-trip tests. Automated request/read-back coverage now includes clearing all nine optional fields, stale-value rejection and invalid review dates (2026-09-30).
-- [ ] Confirm title font preservation in Word: explicit per-control font preservation implemented and regression-tested (2026-09-30); tenant visual acceptance remains open. Investigate the observed Word save/reconnect warning separately. Rename concurrency is a hypothesis, not a confirmed cause.
-- [ ] Implement review confirmation, contextual schedules and overdue views.
-- [ ] Implement Superseded By / Related Documents and lifecycle navigation.
-- [ ] Create the Documentation Needed backlog and publish the DORK operations document. [Usage draft](drafts/usage-guide.md) prepared 2026-09-30; approval and tenant workflow confirmation remain open.
-- [ ] Verify tenant search, Sensitive permissions, version/audit history and export/recovery.
-- [ ] Validate classification references and establish the governance/meeting practices.
-- [ ] Build the dashboard after documentation is populated: search/filter discovery, due/overdue reviews, ownership, backlog, lifecycle and relationships. Reuse authoritative SharePoint data.
+- [x] Word authoring and metadata workflow accepted for tested scenarios.
+- [x] Excel synchronization and reopen persistence accepted for tested scenarios.
+- [x] GEEK upload, metadata, ID/name verification and launcher accepted.
+- [x] Framework assigned DORK-0001; procedure 0002, portal reference 0003 and floorplans 0004 retained.
+- [ ] Confirm next fresh allocation is 0005 when creating a useful document; do not create a throwaway numbered file.
+- [ ] Resolve the source discrepancies and taxonomy decisions above.
+- [ ] Build the staff document register as SharePoint views and create the Documentation Needed list, with a simple staff intake.
+- [ ] Add review-due/overdue views and agree release approval, supersession and relationship handling.
+- [ ] Verify search, Sensitive access, version/audit history, archival and recovery.
+- [ ] Publish the classification index/TLDR and record governance practices.
+- [ ] Build the dashboard over authoritative SharePoint data: search/filter discovery, due reviews, ownership, Needs, lifecycle, calendar and charts.
 
-## Confirmed baseline to preserve
+## Baseline to preserve
 
-- Automatic deployment to the existing Azure Static Web App nerd-dork; application remains entirely Azure-hosted.
-- Preserve X-NERD-SharePoint-Authorization in frontend requests and the API proxy.
-- Tested Word experience: automatic pane opening, silent sign-in without popups, stable startup and removal of redundant Connect button.
-- Tested metadata persistence/read-back, required Classification/Owner validation, title-to-filename rename, and Standard content-type agreement.
-- New Word templates use NERD page controls; user uploaded/repointed templates in the DORK-Templates library.
-- Reference Sheet template restored and repointed. Live NERD Excel synchronization is not implemented; current add-in is Word-only.
+- Existing Azure Static Web App nerd-dork and automatic GitHub deployment; all application hosting remains Azure.
+- X-NERD-SharePoint-Authorization in both frontend and API proxy.
+- Stable Word startup/auto-open, silent authentication and removal of redundant Connect button.
+- Tested metadata verification, required Owner/Classification checks, permanent IDs, filename renames and reopened persistence.
+- User-installed templates in DORK-Templates.
+- Excel field synchronization and metadata persistence; GEEK remains distinct from embedded Office synchronization.
 
-See also [DORK follow-ups](dork-follow-ups.md). Checkboxes remain open until their acceptance work is evidenced; do not infer completion from the platform supporting a feature.
+See also [DORK follow-ups](dork-follow-ups.md). Completion applies to the tested scenario, not every content type, permission boundary or tenant setting.
