@@ -3,7 +3,7 @@
   "solution": {
     "name": "dork-dashboard-client-side-solution",
     "id": "5d67a4a1-582b-4b65-9d83-d41c176a27e9",
-    "version": "1.0.1.0",
+    "version": "1.0.2.0",
     "includeClientSideAssets": false,
     "isDomainIsolated": false,
     "skipFeatureDeployment": false,
