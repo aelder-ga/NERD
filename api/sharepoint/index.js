@@ -63,8 +63,8 @@ module.exports = async function (context, req) {
   try {
     // Construct the outbound origin from a constant, even after validating it.
     // Only the allowlisted path/query is carried across this trust boundary.
-    const upstreamUrl = new URL(target.pathname + target.search, 'https://rocktwpnet.sharepoint.com');
-    const upstream = await fetch(upstreamUrl.href, {
+    const upstreamUrl = `https://rocktwpnet.sharepoint.com${target.pathname}${target.search}`;
+    const upstream = await fetch(upstreamUrl, {
       method, headers,
       body: body == null ? undefined : typeof body === 'string' ? body : JSON.stringify(body),
       redirect: 'error', signal: AbortSignal.timeout(20000),
