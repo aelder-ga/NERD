@@ -66,7 +66,8 @@ jobs:
           findings = []
           for file in files:
               for run in json.loads(file.read_text())['runs']:
-                  rules = {rule['id']: rule for rule in run['tool']['driver']['rules']}
+                  components = [run['tool']['driver']] + run['tool'].get('extensions', [])
+                  rules = {rule['id']: rule for component in components for rule in component.get('rules', [])}
                   for result in run.get('results', []):
                       rule = rules.get(result['ruleId'], {})
                       severity = float(rule.get('properties', {}).get('security-severity', 0))
@@ -74,7 +75,7 @@ jobs:
                       path = location.get('artifactLocation', {}).get('uri', '')
                       line = location.get('region', {}).get('startLine', 0)
                       print(f"{result['ruleId']} severity={severity} {path}:{line}")
-                      if severity >= 4:
+                      if severity >= 4 or (severity == 0 and result.get('level', rule.get('defaultConfiguration', {}).get('level', 'warning')) in ('warning', 'error')):
                           findings.append(result['ruleId'])
           print(f'Medium-or-higher security findings: {len(findings)}')
           raise SystemExit(bool(findings))

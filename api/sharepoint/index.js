@@ -61,7 +61,10 @@ module.exports = async function (context, req) {
   if (method === 'GET' && body != null) return reply(400, { error: 'GET requests cannot have a body.' });
   if (body != null && !headers['content-type']) headers['content-type'] = 'application/json;odata=nometadata';
   try {
-    const upstream = await fetch(target.href, {
+    // Construct the outbound origin from a constant, even after validating it.
+    // Only the allowlisted path/query is carried across this trust boundary.
+    const upstreamUrl = new URL(target.pathname + target.search, 'https://rocktwpnet.sharepoint.com');
+    const upstream = await fetch(upstreamUrl.href, {
       method, headers,
       body: body == null ? undefined : typeof body === 'string' ? body : JSON.stringify(body),
       redirect: 'error', signal: AbortSignal.timeout(20000),
