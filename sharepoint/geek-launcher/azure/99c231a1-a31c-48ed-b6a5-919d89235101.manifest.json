@@ -27,7 +27,7 @@
       "@microsoft/sp-listview-extensibility": {
         "type": "component",
         "id": "d37b65ee-c7d8-4570-bc74-2b294ff3b380",
-        "version": "1.22.2"
+        "version": "1.23.2"
       }
     }
   }

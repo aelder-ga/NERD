@@ -4,6 +4,7 @@ import { configureAutoOpen } from "./auto-open";
 import { assertSupportedHost, syncHostMetadata, saveHostDocument } from "./office-host";
 import { syncWorkbookServerProperties } from "./workbook-properties";
 import { rememberDocumentLocation, resolveDocumentLocation } from "./document-location";
+import { graphUrl } from "../security/requests";
 
 /* global document, Office */
 
@@ -296,10 +297,12 @@ function acquireDialogToken(scopes) {
 /* GRAPH */
 
 async function graphRequest(url, options = {}) {
+    url = graphUrl(url);
     const token = await acquireToken(GRAPH_SCOPES);
 
     const response = await fetch(url, {
         ...options,
+        redirect: "error",
         headers: {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
@@ -340,9 +343,13 @@ function graphGet(url, headers = {}) {
 
 async function graphGetAll(url, headers = {}) {
     const values = [];
+    const visited = new Set();
     let nextUrl = url;
 
     while (nextUrl) {
+        nextUrl = graphUrl(nextUrl);
+        if (visited.has(nextUrl) || visited.size >= 1000) throw new Error("Unexpected Microsoft Graph paging response.");
+        visited.add(nextUrl);
         const result = await graphGet(nextUrl, headers);
 
         if (Array.isArray(result?.value)) {
@@ -2463,7 +2470,7 @@ async function uploadIntakeFiles(files) {
                 const uploaded = await uploadIntakeFile(file, {
                     createSession: (name, body) => graphRequest(`${GRAPH_ROOT}/sites/${encodeURIComponent(dorkSite.id)}/drive/root:/${encodeURIComponent(name)}:/createUploadSession`, {method:"POST", body:JSON.stringify(body)}),
                     // The upload URL authenticates the session; do not send bearer tokens to it.
-                    putChunk: (url, body, headers) => fetch(url, {method:"PUT", body, headers}),
+                    putChunk: (url, body, headers) => fetch(url, {method:"PUT", body, headers, redirect:"error"}),
                 });
                 intakeUploadedIds.add(uploaded.id);
                 if (queue.length === 1) singleUploadedItem = uploaded;

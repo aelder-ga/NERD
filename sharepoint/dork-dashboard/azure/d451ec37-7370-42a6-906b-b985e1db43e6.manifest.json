@@ -2,7 +2,7 @@
   "id": "d451ec37-7370-42a6-906b-b985e1db43e6",
   "alias": "DorkDashboardWebPart",
   "componentType": "WebPart",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "manifestVersion": 2,
   "requiresCustomScript": false,
   "supportedHosts": [
@@ -34,17 +34,17 @@
     "scriptResources": {
       "dork-dashboard-web-part": {
         "type": "path",
-        "path": "dork-dashboard-web-part_9dcbbb9c2422955b29d3.js"
+        "path": "dork-dashboard-web-part_fca7c22109bdc7e64a32.js"
       },
       "@microsoft/sp-webpart-base": {
         "type": "component",
         "id": "974a7777-0990-4136-8fa6-95d80114c2e0",
-        "version": "1.22.2"
+        "version": "1.23.2"
       },
       "@microsoft/sp-http": {
         "type": "component",
         "id": "c07208f0-ea3b-4c1a-9965-ac1b825211a6",
-        "version": "1.22.2"
+        "version": "1.23.2"
       }
     }
   }

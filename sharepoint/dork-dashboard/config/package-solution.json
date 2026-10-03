@@ -3,7 +3,7 @@
   "solution": {
     "name": "dork-dashboard-client-side-solution",
     "id": "5d67a4a1-582b-4b65-9d83-d41c176a27e9",
-    "version": "1.0.3.0",
+    "version": "1.0.4.0",
     "includeClientSideAssets": false,
     "isDomainIsolated": false,
     "skipFeatureDeployment": false,
@@ -12,7 +12,7 @@
       "websiteUrl": "https://thankful-sky-0cc1b0210.6.azurestaticapps.net/",
       "privacyUrl": "",
       "termsOfUseUrl": "",
-      "mpnId": "Undefined-1.22.2"
+      "mpnId": "Undefined-1.23.2"
     },
     "metadata": {
       "shortDescription": {

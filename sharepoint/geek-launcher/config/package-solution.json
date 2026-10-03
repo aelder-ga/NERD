@@ -3,7 +3,7 @@
   "solution": {
     "name": "geek-launcher-client-side-solution",
     "id": "ed7bd668-fcbb-4978-9713-8a69660d2890",
-    "version": "1.0.1.0",
+    "version": "1.0.2.0",
     "includeClientSideAssets": false,
     "isDomainIsolated": false,
     "developer": {
@@ -11,7 +11,7 @@
       "websiteUrl": "https://thankful-sky-0cc1b0210.6.azurestaticapps.net/geek.html",
       "privacyUrl": "",
       "termsOfUseUrl": "",
-      "mpnId": "Undefined-1.22.2"
+      "mpnId": "Undefined-1.23.2"
     },
     "metadata": {
       "shortDescription": {
@@ -29,7 +29,7 @@
         "title": "GEEK Documents launcher",
         "description": "Deploys a custom action with ClientSideComponentId association",
         "id": "6c9a5f8d-b48f-4a2c-9234-b819b777a54e",
-        "version": "1.0.1.0",
+        "version": "1.0.2.0",
         "assets": {
           "elementManifests": [
             "elements.xml"

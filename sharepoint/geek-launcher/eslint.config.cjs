@@ -1,5 +1,6 @@
-require('@rushstack/eslint-config/patch/modern-module-resolution');
-module.exports = {
+const { FlatCompat } = require('@eslint/eslintrc');
+const compatibility = new FlatCompat({baseDirectory:__dirname, recommendedConfig:require('@eslint/js').configs.recommended});
+module.exports = compatibility.config({
   extends: ['@microsoft/eslint-config-spfx/lib/profiles/default'],
   parserOptions: { tsconfigRootDir: __dirname },
   overrides: [
@@ -318,4 +319,4 @@ module.exports = {
       rules: {}
     }
   ]
-};
+});

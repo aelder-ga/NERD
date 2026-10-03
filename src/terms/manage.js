@@ -1,5 +1,6 @@
 import { PublicClientApplication } from '@azure/msal-browser';
 import { TermManager, SET_NAMES, normalized, label, description } from './service';
+import { graphUrl } from '../security/requests';
 const scopes = ['User.Read','User.ReadBasic.All','Sites.ReadWrite.All','TermStore.ReadWrite.All'];
 const msal = new PublicClientApplication({auth:{clientId:'f8371eb2-8758-48cf-8fa5-2f9b696d89c4',authority:'https://login.microsoftonline.com/1169a3a9-3860-4a0b-80aa-410be007cde5',redirectUri:window.location.origin+'/sso-redirect.html'},cache:{cacheLocation:'localStorage'}});
 const $ = id => document.getElementById(id);
@@ -22,8 +23,9 @@ async function token(interactive=false) {
  msal.setActiveAccount(result.account); return result.accessToken;
 }
 async function request(url, options={}) {
+ const target=graphUrl(url);
  const accessToken=await token();
- const response=await fetch(url,{...options,headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'}});
+ const response=await fetch(target,{...options,redirect:'error',headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'}});
  const body=await response.json().catch(()=>({}));
  if (!response.ok) {const error=Error(body.error?.message || `Microsoft returned ${response.status}.`); error.status=response.status; throw error;}
  return body;

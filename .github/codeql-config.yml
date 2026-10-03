@@ -1,0 +1,10 @@
+name: DORK authored application code
+queries:
+  - uses: security-extended
+paths:
+  - api
+  - src
+  - scripts
+  - server.js
+  - sharepoint/dork-dashboard/src
+  - sharepoint/geek-launcher/src

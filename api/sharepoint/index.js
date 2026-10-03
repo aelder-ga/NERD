@@ -35,10 +35,24 @@ module.exports = async function (context, req) {
   } catch { return reply(400, { error: 'Invalid SharePoint URL.' }); }
   const method = String(input.method || 'POST').toUpperCase();
   if (!['GET', 'POST'].includes(method)) return reply(405, { error: 'Unsupported SharePoint method.' });
+  // This is a metadata bridge, not a general REST tunnel (including $batch).
+  const library = process.env.NERD_NUMBERING_DOCUMENTS_LIST_ID || 'dd8ac8ef-3be9-4fb8-b7cb-6ac0f56d2b03';
+  if (!/^[0-9a-f-]{36}$/i.test(library)) return reply(503, { error: 'DORK library configuration is invalid.' });
+  const path = target.pathname.toLowerCase();
+  const itemRoot = `/sites/dork/_api/web/lists(guid'${library.toLowerCase()}')/items(`;
+  const itemPath = path.startsWith(itemRoot) ? path.slice(itemRoot.length) : '';
+  const allowed = method === 'POST'
+    ? path === '/sites/dork/_api/web/ensureuser' || /^\d+\)\/validateupdatelistitem$/.test(itemPath)
+    : /^\/sites\/dork\/_api\/web\/getuserbyid\(\d+\)$/.test(path) || /^\d+\)\/file(?:\/properties)?$/.test(itemPath);
+  if (!allowed) return reply(403, { error: 'This operation is not part of the DORK metadata bridge.' });
   const headers = { Accept: 'application/json;odata=nometadata' };
   for (const [key, value] of Object.entries(input.headers || {})) {
     const normalized = key.toLowerCase();
-    if (['accept', 'content-type', 'if-match'].includes(normalized) && typeof value === 'string') {
+    if (['accept', 'content-type'].includes(normalized) &&
+        (typeof value !== 'string' || !/^application\/json(?:\s*;[^\r\n]*)?$/i.test(value))) {
+      return reply(400, { error: 'Only JSON SharePoint requests are supported.' });
+    }
+    if (['content-type', 'if-match'].includes(normalized) && typeof value === 'string' && !/[\r\n]/.test(value)) {
       headers[normalized] = value;
     }
   }
