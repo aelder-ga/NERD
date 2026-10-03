@@ -16,7 +16,7 @@
     "@microsoft/sp-core-library": "1.23.2",
     "@microsoft/sp-dialog": "1.23.2",
     "@microsoft/sp-listview-extensibility": "1.23.2",
-    "tslib": "2.3.1"
+    "tslib": "2.8.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
