@@ -7,7 +7,7 @@ Review started 2 October 2026; verification continued 3 October UTC. Baseline: `
 - Reviewed current frontend, Azure Functions, numbering authorization, standalone taxonomy editor, SharePoint dashboard and launcher, deployment workflows, and dependency manifests.
 - Inspected the main branch's 41 commits and scanned 245 unique text blobs (about 7.25 MB) from 145 historical paths for common credential patterns. Five matches were synthetic test fixtures; no real credential was identified by that scan. Seven historical binary PNG blobs were unavailable through the connector. This custom scan is supplemented by a full-history Gitleaks workflow; its result must be checked separately.
 - Reviewed packaged SharePoint component source and newly generated manifests. This is not a forensic scan of every tenant file, every GitHub ref, or all Microsoft/vendor SDK code.
-- All 92 application tests passed, including rejection tests for foreign Graph destinations, hostile upload destinations, repeated paging, non-metadata SharePoint operations, missing tokens, and redirect handling.
+- All 93 application tests passed, including rejection tests for foreign Graph destinations, hostile upload destinations, repeated paging, non-metadata SharePoint operations, unsupported query options, missing tokens, and redirect handling. Canonical metadata routes preserve `$select`/`$expand` values after encoding.
 - Azure production build passed. Both SharePoint Framework 1.23.2 packages built with Node 22, including the dashboard's existing test suite.
 - `npm audit --omit=dev` reported zero known vulnerabilities in all three projects: root, dashboard, and launcher. Full development audits still report advisories; they are not clean.
 - The existing live DORK dashboard loaded as the regular district account. Its Site access panel displayed Abraham Elder as owner and no listed site members or visitors. This limited panel observation is not proof that all individual item permissions or external links are restricted.
@@ -39,3 +39,16 @@ The numbering API checks the delegated caller's edit permission on the specific 
 6. **Deployment:** Azure changes deploy through the existing workflow. Upgraded dashboard package `1.0.4.0` and launcher `1.0.2.0` must also replace the installed SharePoint app-catalog packages before their framework upgrade is considered live. Their rebuilt assets remain hosted exclusively in the existing Azure Static Web App.
 
 No destructive live tests, document metadata changes, numbering allocations, taxonomy additions, permission changes, or secret rotation were used as part of this review. Check the security workflow and deployment results for the exact remediation commit before treating this change as deployed.
+
+## Final verification
+
+Application remediation commit: `86d19c95574a20a38c1a9674216c6cb65ee57561`.
+
+- [Azure deployment](https://github.com/aelder-ga/NERD/actions/runs/37087294566) completed successfully.
+- [Security review](https://github.com/aelder-ga/NERD/actions/runs/37087294595) passed all three jobs. Full-history Gitleaks scanned 63 reachable commits with no leaks found. CodeQL security-extended produced no findings; no finding suppression was added. Its initial request-forgery finding prompted reconstruction of outbound proxy operations from fixed routes and encoded values. The security check reads SARIF driver and extension metadata and rejects actionable findings.
+- Production audits passed for all three projects, and all 93 application tests passed in CI.
+- Live GEEK responses supplied the configured CSP, no-store, nosniff, no-referrer and HSTS headers. The cache-busted frontend loaded. GEEK authenticated as the regular account and listed all four existing numbered files; Collections & Systems authenticated and read the existing ten collections under its stricter policy.
+- Live SharePoint and numbering APIs returned 401 without a token. The live proxy rejected foreign destinations and `$batch` with 403, and a permitted metadata GET with a deliberately invalid token returned 401. These checks did not write document data.
+- SharePoint's app detail page still lists dashboard catalog version `1.0.3.0`; replacement packages `1.0.4.0` (dashboard) and `1.0.2.0` (launcher) are built and available in the existing Azure site's `/downloads/` folder. This review does not claim the catalog replacements are installed.
+
+The application fixes are deployed; administrative verification and app-catalog replacement remain open. The public repository contains no document body data added by this review. A clean scan does not certify the tenant or eliminate the remaining concerns above.
