@@ -28,7 +28,7 @@
     "@rushstack/heft": "1.2.17",
     "@types/heft-jest": "1.0.2",
     "@types/webpack-env": "~1.15.2",
-    "@typescript-eslint/parser": "8.46.2",
+    "@typescript-eslint/parser": "8.71.0",
     "css-loader": "~7.1.2",
     "eslint": "9.37.0",
     "typescript": "~5.8.0",
