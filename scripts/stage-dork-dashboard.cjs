@@ -1,5 +1,7 @@
 const fs=require('node:fs');const path=require('node:path');
 const root=path.join(__dirname,'..','sharepoint','dork-dashboard');const target=path.join(root,'azure');fs.mkdirSync(target,{recursive:true});
+const bundles=fs.readdirSync(path.join(root,'release/assets')).filter(name=>name.endsWith('.js'));
+if(!bundles.some(name=>{const code=fs.readFileSync(path.join(root,'release/assets',name),'utf8');return code.includes('.dorkDash{')&&!code.includes('.dorkDash_')&&!code.includes(':global');}))throw Error('Dashboard styles must retain literal HTML class selectors in the production bundle.');
 for(const folder of ['release/assets','release/manifests'])for(const name of fs.readdirSync(path.join(root,folder)))fs.copyFileSync(path.join(root,folder,name),path.join(target,name));
 const manifest=JSON.parse(fs.readFileSync(path.join(target,'d451ec37-7370-42a6-906b-b985e1db43e6.manifest.json'),'utf8'));
 if(manifest.loaderConfig.internalModuleBaseUrls.some(url=>!url.startsWith('https://thankful-sky-0cc1b0210.6.azurestaticapps.net/sharepoint/dork-dashboard/')))throw Error('Dashboard assets must stay in the existing Azure Static Web App.');

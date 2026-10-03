@@ -3,7 +3,7 @@ import {SPHttpClient} from '@microsoft/sp-http';
 import {DashboardData,loadData} from './data';
 import {escapeHtml as e,todayKey,dayKey,lifecycleCounts,reviewCounts,reviewStatus,calendarEvents,isOpen,sortNeeds,lower} from './model';
 import {classify} from './classification';
-import './dashboard.global.css';
+import './dashboard.scss';
 export default class DorkDashboardWebPart extends BaseClientSideWebPart<Record<string,never>> {
  private data?:DashboardData;private selected=todayKey();private month=this.selected.slice(0,7);private filter='';private filterKind='';private query='';private disposed=false;
  public render():void{if(this.data)this.draw();else void this.refresh();}
