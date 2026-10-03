@@ -41,10 +41,25 @@ module.exports = async function (context, req) {
   const path = target.pathname.toLowerCase();
   const itemRoot = `/sites/dork/_api/web/lists(guid'${library.toLowerCase()}')/items(`;
   const itemPath = path.startsWith(itemRoot) ? path.slice(itemRoot.length) : '';
-  const allowed = method === 'POST'
-    ? path === '/sites/dork/_api/web/ensureuser' || /^\d+\)\/validateupdatelistitem$/.test(itemPath)
-    : /^\/sites\/dork\/_api\/web\/getuserbyid\(\d+\)$/.test(path) || /^\d+\)\/file(?:\/properties)?$/.test(itemPath);
-  if (!allowed) return reply(403, { error: 'This operation is not part of the DORK metadata bridge.' });
+  const item = /^(\d+)\)\/(validateupdatelistitem|file|file\/properties)$/.exec(itemPath);
+  const user = /^\/sites\/dork\/_api\/web\/getuserbyid\((\d+)\)$/.exec(path);
+  let operation;
+  if (method === 'POST' && path === '/sites/dork/_api/web/ensureuser') operation = 'web/ensureuser';
+  else if (method === 'GET' && user) operation = `web/GetUserById(${encodeURIComponent(user[1])})`;
+  else if (item && ((method === 'POST' && item[2] === 'validateupdatelistitem') ||
+      (method === 'GET' && item[2] !== 'validateupdatelistitem'))) {
+    const suffix = item[2] === 'validateupdatelistitem' ? 'ValidateUpdateListItem' :
+      item[2] === 'file/properties' ? 'File/Properties' : 'File';
+    operation = `web/lists(guid'${library}')/items(${encodeURIComponent(item[1])})/${suffix}`;
+  }
+  if (!operation) return reply(403, { error: 'This operation is not part of the DORK metadata bridge.' });
+  const query = [];
+  for (const [key, value] of target.searchParams) {
+    if (method !== 'GET' || !['$select', '$expand'].includes(key)) {
+      return reply(400, { error: 'Unsupported metadata query option.' });
+    }
+    query.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+  }
   const headers = { Accept: 'application/json;odata=nometadata' };
   for (const [key, value] of Object.entries(input.headers || {})) {
     const normalized = key.toLowerCase();
@@ -61,9 +76,9 @@ module.exports = async function (context, req) {
   if (method === 'GET' && body != null) return reply(400, { error: 'GET requests cannot have a body.' });
   if (body != null && !headers['content-type']) headers['content-type'] = 'application/json;odata=nometadata';
   try {
-    // Construct the outbound origin from a constant, even after validating it.
-    // Only the allowlisted path/query is carried across this trust boundary.
-    const upstreamUrl = `https://rocktwpnet.sharepoint.com${target.pathname}${target.search}`;
+    // Rebuild the operation from fixed routes and encoded IDs/query values.
+    // No caller-supplied URL or path is forwarded to the network sink.
+    const upstreamUrl = `https://rocktwpnet.sharepoint.com/sites/DORK/_api/${operation}${query.length ? '?' + query.join('&') : ''}`;
     const upstream = await fetch(upstreamUrl, {
       method, headers,
       body: body == null ? undefined : typeof body === 'string' ? body : JSON.stringify(body),

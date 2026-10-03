@@ -56,3 +56,12 @@ test('Proxy network errors never expose bearer tokens or request bodies',async()
  const old=global.fetch;global.fetch=async()=>{throw Error('sensitive-upstream-placeholder');};
  try {const ctx={};await proxy(ctx,{headers:{'x-nerd-sharepoint-authorization':'Bearer test-only'},body:{url:origin+library+'/File',method:'GET'}});assert.equal(ctx.res.status,502);assert.ok(!JSON.stringify(ctx.res).includes('sensitive-upstream-placeholder'));}finally{global.fetch=old;}
 });
+test('Proxy rebuilds canonical metadata routes and preserves encoded select/expand queries',async()=>{
+ const old=global.fetch;const calls=[];
+ global.fetch=async(url)=>{calls.push(url);return {ok:true,status:200,text:async()=>'{}'};};
+ try {
+  const ctx={};await proxy(ctx,{headers:{'x-nerd-sharepoint-authorization':'Bearer test-only'},body:{url:origin+library+'/File?$select=CheckOutType,LockedByUser/Id&$expand=LockedByUser',method:'GET'}});
+  assert.equal(ctx.res.status,200);const url=new URL(calls[0]);assert.equal(url.origin,'https://rocktwpnet.sharepoint.com');assert.equal(url.pathname,'/sites/DORK/_api/'+library+'/File');assert.equal(url.searchParams.get('$select'),'CheckOutType,LockedByUser/Id');assert.equal(url.searchParams.get('$expand'),'LockedByUser');
+  const bad={};await proxy(bad,{headers:{'x-nerd-sharepoint-authorization':'Bearer test-only'},body:{url:origin+library+'/File?redirect=https://evil.example',method:'GET'}});assert.equal(bad.res.status,400);assert.equal(calls.length,1);
+ }finally{global.fetch=old;}
+});
