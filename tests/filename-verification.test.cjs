@@ -1,0 +1,8 @@
+const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const vm=require('node:vm');
+const source=fs.readFileSync(require('node:path').join(__dirname,'../src/taskpane/taskpane.js'),'utf8');
+const helper=source.slice(source.indexOf('async function readFilenameAfterRename('),source.indexOf('async function verifySavedMetadata('));
+function setup(read){const delays=[];const context={getDriveItemById:read,setTimeout:(fn,ms)=>{delays.push(ms);fn();}};vm.createContext(context);vm.runInContext(helper,context);return{run:context.readFilenameAfterRename,delays};}
+test('rename verification tolerates stale Graph names and uses the same identity',async()=>{const ids=[];const names=['old.docx','old.docx','DORK-0005 Agenda.docx'];const h=setup(async id=>{ids.push(id);return{id,name:names.shift()};});assert.equal((await h.run('stable-id','DORK-0005 Agenda.docx')).name,'DORK-0005 Agenda.docx');assert.deepEqual(ids,['stable-id','stable-id','stable-id']);assert.deepEqual(h.delays,[300,700]);});
+test('already visible name requires one read and no delay',async()=>{const h=setup(async()=>({name:'new.docx'}));assert.equal((await h.run('id','new.docx')).name,'new.docx');assert.deepEqual(h.delays,[]);});
+test('persistent mismatch stays a mismatch after bounded reads',async()=>{let count=0;const h=setup(async()=>{count++;return{name:'old.docx'};});assert.equal((await h.run('id','new.docx')).name,'old.docx');assert.equal(count,5);});
+test('access failures propagate without retrying writes or concealing errors',async()=>{let count=0;const h=setup(async()=>{count++;throw Error('Forbidden');});await assert.rejects(h.run('id','new.docx'),/Forbidden/);assert.equal(count,1);});

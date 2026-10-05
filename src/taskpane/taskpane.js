@@ -1722,7 +1722,7 @@ async function saveMetadata() {
             setSaveStatus("Renaming document...", "working");
             await validateUpdateListItem([{ FieldName: "FileLeafRef", FieldValue: desiredFilename }]);
         }
-        await verifySavedMetadata(contentType, desiredFilename);
+        await verifySavedMetadata(contentType, desiredFilename, true);
         rememberDocumentLocation(window.sessionStorage, dorkSite.id, dorkDocumentsLibrary.id, currentDocumentUrl, currentDriveItem);
 
         if (documentId && String(getFieldValue("DORK ID") || "") !== documentId) throw new Error("SharePoint did not verify: DORK ID.");
@@ -2026,8 +2026,23 @@ function buildDesiredFilename() {
     return `${title}${extension}`;
 }
 
-async function verifySavedMetadata(contentType, desiredFilename) {
-    currentDriveItem = await getDriveItemById(currentDriveItem.id);
+async function readFilenameAfterRename(id, desiredFilename) {
+    // SharePoint can accept a rename before Graph exposes the new filename.
+    // Retry only reads by stable identity; never repeat metadata writes or allocation.
+    const delays = [0, 300, 700, 1500, 2500];
+    let item;
+    for (const delay of delays) {
+        if (delay) await new Promise(resolve => setTimeout(resolve, delay));
+        item = await getDriveItemById(id);
+        if (item.name === desiredFilename) return item;
+    }
+    return item; // The normal verification below still rejects a persistent mismatch.
+}
+
+async function verifySavedMetadata(contentType, desiredFilename, waitForFilename = false) {
+    currentDriveItem = waitForFilename
+        ? await readFilenameAfterRename(currentDriveItem.id, desiredFilename)
+        : await getDriveItemById(currentDriveItem.id);
     currentListItem = await getCurrentListItem(currentDriveItem);
     currentDocumentFields = currentListItem.fields || {};
 
