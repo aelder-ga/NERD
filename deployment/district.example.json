@@ -1,0 +1,8 @@
+{
+  "organization": "Example School District",
+  "tenantId": "11111111-1111-4111-8111-111111111111",
+  "clientId": "22222222-2222-4222-8222-222222222222",
+  "sharepointHost": "exampledistrict.sharepoint.com",
+  "azureOrigin": "https://example-district.azurestaticapps.net",
+  "documentsListId": "33333333-3333-4333-8333-333333333333"
+}
